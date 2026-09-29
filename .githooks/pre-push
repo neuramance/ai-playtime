@@ -1,0 +1,2 @@
+#!/bin/sh
+exec bun run --cwd "$(git rev-parse --show-toplevel)" verify

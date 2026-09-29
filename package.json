@@ -1,0 +1,44 @@
+{
+  "name": "ccplaytime",
+  "version": "0.1.0",
+  "description": "Steam-style hours played for Claude Code.",
+  "keywords": [
+    "claude-code",
+    "claude",
+    "playtime",
+    "hours",
+    "time-tracking",
+    "cli"
+  ],
+  "author": "neuramance",
+  "repository": "github:neuramance/ccplaytime",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ccplaytime": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "bun build src/cli.ts --target=node --minify --outfile=${OUT:-dist}/cli.js && node ${OUT:-dist}/cli.js --help | grep -q 'Usage: ccplaytime'",
+    "check": "scripts/agent-verify",
+    "verify": "scripts/agent-verify && vitest run scripts",
+    "prepare": "[ ! -e .git ] || git config core.hooksPath .githooks",
+    "prepublishOnly": "bun run verify && bun run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/estree": "1.0.9",
+    "@types/node": "24.19.0",
+    "eslint": "10.11.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.2",
+    "zod": "4.6.5"
+  }
+}
