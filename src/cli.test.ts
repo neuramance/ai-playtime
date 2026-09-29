@@ -20,10 +20,12 @@ const DAY = 24 * 60 * MINUTE;
 
 const today = Math.floor(Date.now() / DAY) * DAY;
 const dayKey = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-const events = (...times: number[]) =>
-  times.map((t) => `${JSON.stringify({ timestamp: new Date(t).toISOString() })}\n`).join("");
+const events = (times: number[], entrypoint?: string) =>
+  times
+    .map((t) => `${JSON.stringify({ timestamp: new Date(t).toISOString(), entrypoint })}\n`)
+    .join("");
 const yesterdayAt = (...minutes: number[]) =>
-  events(...minutes.map((m) => today - DAY + 10 * 60 * MINUTE + m * MINUTE));
+  events(minutes.map((m) => today - DAY + 10 * 60 * MINUTE + m * MINUTE));
 
 function emptyDir(): string {
   const dir = mkdtempSync(join(tmpdir(), `ccplaytime-${String(process.pid)}-`));
@@ -51,17 +53,85 @@ function claudeDir(): string {
 }
 
 function saveRecord(dir: string, scannedAt: number, secondsByDay: Record<string, number>): void {
+  const record = {
+    version: 1,
+    scannedAt: new Date(scannedAt).toISOString(),
+    secondsByDay,
+    earlier: null,
+  };
+  write(dir, "ccplaytime.json", JSON.stringify(record));
+}
+
+const at = (iso: string) => Date.parse(iso);
+const everyTenMinutes = (from: string, minutes: number) =>
+  Array.from({ length: minutes / 10 + 1 }, (_, i) => at(from) + i * 10 * MINUTE);
+const launches = (numStartups: number, firstStartTime = "2025-06-23T09:00:00.000Z") =>
+  JSON.stringify({ numStartups, firstStartTime, theme: "dark" });
+
+function writeSession(
+  claude: string,
+  name: string,
+  from: string,
+  minutes: number,
+  entrypoint?: string,
+) {
   write(
-    dir,
-    "ccplaytime.json",
-    JSON.stringify({ version: 1, scannedAt: new Date(scannedAt).toISOString(), secondsByDay }),
+    claude,
+    `projects/${name}.jsonl`,
+    events(everyTenMinutes(`2025-07-01T${from}:00Z`, minutes), entrypoint),
   );
 }
 
+function writeOtherSessions(claude: string) {
+  for (const hour of [5, 6, 7, 8, 9, 10, 11, 12]) {
+    writeSession(
+      claude,
+      `-work/s${String(hour - 2)}`,
+      `${String(hour).padStart(2, "0")}:00`,
+      30,
+      "cli",
+    );
+  }
+  writeSession(claude, "-batch/print", "13:00", 30, "sdk-cli");
+  writeSession(claude, "-ide/vscode", "14:00", 30, "claude-vscode");
+  writeSession(claude, "-old/unmarked", "15:00", 30);
+}
+
+function writeHistory(claude: string, config: string, configText = launches(110)) {
+  writeSession(claude, "-work/s1", "00:00", 180, "cli");
+  write(
+    claude,
+    "projects/-work/s1/subagents/agent-a.jsonl",
+    events([at("2025-07-01T01:05:00Z")], "cli"),
+  );
+  writeSession(claude, "-work/s2", "03:30", 60, "cli");
+  writeOtherSessions(claude);
+  writeFileSync(config, configText);
+}
+
+function historyDir(configText?: string): string {
+  const dir = emptyDir();
+  writeHistory(dir, join(dir, ".claude.json"), configText);
+  return dir;
+}
+
+const wholeHistory = {
+  hoursOnRecord: 72.75,
+  hoursMeasured: 9.5,
+  hoursEstimated: 63.25,
+  hoursEstimatedRange: [50, 80],
+  hoursLastTwoWeeks: 0,
+  playingSince: "2025-06-23",
+  measuredSince: "2025-07-01",
+  earlierLaunches: 100,
+  secondsByDay: { "2025-07-01": 34_200 },
+};
+
 function childEnv(overrides: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: "1", ...overrides };
+  const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: "1" };
   delete env.FORCE_COLOR;
-  return env;
+  delete env.CLAUDE_CONFIG_DIR;
+  return { ...env, ...overrides };
 }
 
 function runWith(overrides: NodeJS.ProcessEnv, ...args: string[]) {
@@ -74,13 +144,18 @@ function runWith(overrides: NodeJS.ProcessEnv, ...args: string[]) {
 }
 
 const run = (dir: string, ...args: string[]) =>
-  runWith({ CLAUDE_CONFIG_DIR: dir, HOME: dir }, ...args);
+  runWith({ CLAUDE_CONFIG_DIR: dir, HOME: emptyDir() }, ...args);
 const json = (dir: string) => JSON.parse(run(dir, "--json").stdout) as unknown;
 
 const halfHourYesterday = {
   hoursOnRecord: 0.5,
+  hoursMeasured: 0.5,
+  hoursEstimated: 0,
+  hoursEstimatedRange: null,
   hoursLastTwoWeeks: 0.5,
-  onRecordSince: dayKey(today - DAY),
+  playingSince: dayKey(today - DAY),
+  measuredSince: dayKey(today - DAY),
+  earlierLaunches: 0,
   secondsByDay: { [dayKey(today - DAY)]: 1800 },
 };
 
@@ -100,6 +175,108 @@ it("reads ~/.claude when CLAUDE_CONFIG_DIR is unset or blank", () => {
   expect(JSON.parse(stdout)).toMatchObject({ hoursOnRecord: 0.5 });
 });
 
+it("estimates earlier terminal launches between the typical and the average measured session", () => {
+  expect(json(historyDir())).toEqual(wholeHistory);
+});
+
+it("reads ~/.claude.json for launch history when CLAUDE_CONFIG_DIR is unset", () => {
+  const home = emptyDir();
+  writeHistory(join(home, ".claude"), join(home, ".claude.json"));
+  expect(JSON.parse(runWith({ HOME: home }, "--json").stdout)).toEqual(wholeHistory);
+});
+
+it("prefers Claude Code's legacy .config.json when it exists", () => {
+  const dir = historyDir(launches(999));
+  write(dir, ".config.json", launches(110));
+  expect(json(dir)).toEqual(wholeHistory);
+});
+
+it("keeps the first estimate after transcripts are deleted and launches grow", () => {
+  const dir = historyDir();
+  run(dir, "--json");
+  rmSync(join(dir, "projects"), { recursive: true });
+  writeFileSync(join(dir, ".claude.json"), launches(500));
+  expect(json(dir)).toEqual(wholeHistory);
+});
+
+it("waits for 10 measured sessions, then estimates the launches counted on the first run", () => {
+  const dir = emptyDir();
+  writeSession(dir, "-work/s1", "00:00", 180, "cli");
+  writeSession(dir, "-work/s2", "03:30", 60, "cli");
+  write(dir, ".claude.json", launches(50));
+  expect(run(dir).stdout).toBe(
+    [
+      "",
+      "  ▶ Claude Code",
+      "    4.0 hrs on record",
+      "    0.0 hrs last two weeks  ··············",
+      "    playing since 23 Jun 2025, measured since 1 Jul 2025",
+      "    48 earlier launches, estimated once 10 sessions are measured",
+      "",
+      `  Saved to ${join(dir, "ccplaytime.json")}. Claude Code deletes transcripts after 30 days,`,
+      "  so run ccplaytime at least that often to keep your record complete.",
+      "",
+    ].join("\n"),
+  );
+  writeOtherSessions(dir);
+  expect(json(dir)).toMatchObject({
+    hoursOnRecord: 39.86,
+    hoursMeasured: 9.5,
+    hoursEstimated: 30.36,
+    hoursEstimatedRange: [24, 38.4],
+    earlierLaunches: 48,
+  });
+});
+
+it("names a single earlier launch in the singular", () => {
+  const card = run(historyDir(launches(11))).stdout.split("\n");
+  expect(card.slice(2, 6)).toEqual([
+    "    ~10 hrs on record",
+    "    0.0 hrs last two weeks  ··············",
+    "    playing since 23 Jun 2025, measured since 1 Jul 2025",
+    "    ~1 hrs estimated from 1 earlier launch (1–1)",
+  ]);
+});
+
+it("estimates nothing when Claude Code was first started on the first measured day", () => {
+  expect(json(historyDir(launches(110, "2025-07-01T00:00:00.000Z")))).toEqual({
+    ...wholeHistory,
+    hoursOnRecord: 9.5,
+    hoursEstimated: 0,
+    hoursEstimatedRange: null,
+    playingSince: "2025-07-01",
+    earlierLaunches: 0,
+  });
+});
+
+it("refuses to guess from unreadable Claude Code configuration", () => {
+  const dir = historyDir("{");
+  expect({ ...run(dir), saved: existsSync(join(dir, "ccplaytime.json")) }).toEqual({
+    status: 1,
+    stdout: "",
+    stderr: `ccplaytime: ${join(dir, ".claude.json")} is not valid Claude Code configuration\n`,
+    saved: false,
+  });
+});
+
+it("shows whole history on the card, split into measured and estimated", () => {
+  const dir = historyDir();
+  expect(run(dir).stdout).toBe(
+    [
+      "",
+      "  ▶ Claude Code",
+      "    ~73 hrs on record",
+      "    0.0 hrs last two weeks  ··············",
+      "    playing since 23 Jun 2025, measured since 1 Jul 2025",
+      "    ~63 hrs estimated from 100 earlier launches (50–80)",
+      "",
+      `  Saved to ${join(dir, "ccplaytime.json")}. Claude Code deletes transcripts after 30 days,`,
+      "  so run ccplaytime at least that often to keep your record complete.",
+      "",
+    ].join("\n"),
+  );
+});
+
 it("keeps the record after Claude Code deletes the transcripts", () => {
   const dir = claudeDir();
   run(dir, "--json");
@@ -112,7 +289,7 @@ it("counts activity added after the previous run", () => {
   run(dir, "--json");
   appendFileSync(
     join(dir, "projects/-work/s1.jsonl"),
-    events(today + 60 * MINUTE, today + 70 * MINUTE),
+    events([today + 60 * MINUTE, today + 70 * MINUTE]),
   );
   expect(json(dir)).toMatchObject({
     secondsByDay: { [dayKey(today - DAY)]: 1800, [dayKey(today)]: 600 },
@@ -129,14 +306,14 @@ it("keeps saved days that the rescan window only partly covers", () => {
   write(
     dir,
     "projects/-work/s1.jsonl",
-    events(
+    events([
       early + DAY - 5 * MINUTE,
       early + DAY + 8 * MINUTE,
       today + 60 * MINUTE,
       today + 70 * MINUTE,
-    ),
+    ]),
   );
-  const untouched = write(dir, "projects/-work/s2.jsonl", events(early + DAY + 2 * MINUTE));
+  const untouched = write(dir, "projects/-work/s2.jsonl", events([early + DAY + 2 * MINUTE]));
   utimesSync(untouched, new Date(early + DAY + 3 * MINUTE), new Date(early + DAY + 3 * MINUTE));
   expect(json(dir)).toMatchObject({
     secondsByDay: { [dayKey(early)]: 420, [dayKey(early + DAY)]: 360, [dayKey(today)]: 600 },
@@ -148,11 +325,7 @@ it("prints a Steam-style card and explains the saved record on the first run", (
   write(
     dir,
     "projects/-work/s1.jsonl",
-    events(
-      Date.parse("2025-06-23T10:00:00Z"),
-      Date.parse("2025-06-23T10:15:00Z"),
-      Date.parse("2025-06-23T10:30:00Z"),
-    ),
+    events([at("2025-06-23T10:00:00Z"), at("2025-06-23T10:15:00Z"), at("2025-06-23T10:30:00Z")]),
   );
   expect(run(dir)).toEqual({
     status: 0,
@@ -210,7 +383,8 @@ it("reports no activity for an empty Claude directory without writing a record",
     card: { status: 0, stdout: `No Claude Code activity found in ${dir}\n`, stderr: "" },
     json: {
       status: 0,
-      stdout: '{"hoursOnRecord":0,"hoursLastTwoWeeks":0,"onRecordSince":null,"secondsByDay":{}}\n',
+      stdout:
+        '{"hoursOnRecord":0,"hoursMeasured":0,"hoursEstimated":0,"hoursEstimatedRange":null,"hoursLastTwoWeeks":0,"playingSince":null,"measuredSince":null,"earlierLaunches":0,"secondsByDay":{}}\n',
       stderr: "",
     },
     saved: false,
