@@ -1,21 +1,24 @@
 #!/usr/bin/env node
-import { rename, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, rename, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { parseArgs, styleText } from "node:util";
 import * as z from "zod/mini";
 import pkg from "../package.json" with { type: "json" };
 import {
   claudePaths,
   loadLaunches,
-  parseJson,
-  readIfPresent,
   scanSessions,
   type ClaudePaths,
   type Session,
 } from "./claude.ts";
+import { codexRoots, scanCodex } from "./codex.ts";
+import { parseJson, readIfPresent } from "./files.ts";
 import {
   activeSeconds,
   activeSecondsByDay,
+  addDays,
+  APPS,
   CALIBRATION_SESSIONS,
   calibrate,
   countEarlier,
@@ -24,35 +27,43 @@ import {
   midpoint,
   rescanFrom,
   summarize,
+  type App,
+  type Days,
   type Earlier,
-  type SecondsByDay,
   type Summary,
 } from "./playtime.ts";
 
-const USAGE = `Usage: ccplaytime [--json]
+const USAGE = `Usage: ai-playtime [--json]
 
-Steam-style hours played for Claude Code.
+Steam-style hours played across Claude Code, Codex, the ChatGPT app and the Claude app.
 
-Counts wall-clock time any Claude Code session was active, merging parallel
-sessions and subagents. Gaps over ${String(IDLE_LIMIT_MS / 60_000)} minutes count as idle.
+Counts wall-clock time each app's sessions were active, merging parallel sessions and
+subagents; gaps over ${String(IDLE_LIMIT_MS / 60_000)} minutes count as idle. The total adds up the apps.
+Chats in the desktop apps are stored in the cloud, so only their agent sessions count.
 
-Each run saves daily (UTC) totals to $CLAUDE_CONFIG_DIR/ccplaytime.json (default
-~/.claude), so your record outlives Claude Code's 30-day transcript cleanup.
+Each run saves daily (UTC) totals to $XDG_DATA_HOME/ai-playtime/record.json (default
+~/.local/share), so your record outlives Claude Code's 30-day transcript cleanup.
 
-Time before your oldest transcript is estimated from Claude Code's count of
-terminal launches, once ${String(CALIBRATION_SESSIONS)} sessions are measured: between your typical
-(median) and average session, shown with its range.
+Claude Code time before your oldest transcript is estimated from its count of terminal
+launches, once ${String(CALIBRATION_SESSIONS)} sessions are measured: between your typical
+(median) and average session. --json shows the range.
 
 Options:
   --json         print machine-readable output
   -h, --help     show this help
   -v, --version  show version`;
 
+const LABELS: Record<App, string> = {
+  "claude-code": "Claude Code",
+  codex: "Codex",
+  chatgpt: "ChatGPT app",
+  claude: "Claude app",
+};
 const Count = z.int().check(z.nonnegative());
 const RecordFile = z.object({
   version: z.literal(1),
   scannedAt: z.iso.datetime(),
-  secondsByDay: z.record(z.iso.date(), Count),
+  apps: z.partialRecord(z.enum(APPS), z.record(z.iso.date(), Count)),
   earlier: z.nullable(
     z.object({
       since: z.iso.date(),
@@ -65,27 +76,47 @@ const NO_ACTIVITY_JSON = {
   hoursOnRecord: 0,
   hoursMeasured: 0,
   hoursEstimated: 0,
-  hoursEstimatedRange: null,
   hoursLastTwoWeeks: 0,
-  playingSince: null,
-  measuredSince: null,
-  earlierLaunches: 0,
-  secondsByDay: {},
+  since: null,
+  apps: [],
 };
 const BARS = "▁▂▃▄▅▆▇█";
 const MONTHS = "JanFebMarAprMayJunJulAugSepOctNovDec";
 
 interface SavedRecord {
   scannedAt: number;
-  secondsByDay: SecondsByDay;
+  apps: Days;
+  earlier: Earlier | null;
+}
+
+interface AppTime {
+  app: App;
+  summary: Summary;
   earlier: Earlier | null;
 }
 
 interface Tracked {
-  record: SecondsByDay;
-  summary: Summary;
+  apps: AppTime[];
+  days: Days;
+  total: Summary;
   earlier: Earlier | null;
   newRecordPath: string | undefined;
+}
+
+interface Paths {
+  record: string;
+  claude: ClaudePaths;
+  codex: readonly string[];
+}
+
+function paths(env: NodeJS.ProcessEnv): Paths {
+  const configured = env.XDG_DATA_HOME?.trim() ?? "";
+  const data = configured === "" ? join(homedir(), ".local", "share") : configured;
+  return {
+    record: join(data, "ai-playtime", "record.json"),
+    claude: claudePaths(env),
+    codex: codexRoots(env),
+  };
 }
 
 async function loadRecord(path: string): Promise<SavedRecord | undefined> {
@@ -93,53 +124,98 @@ async function loadRecord(path: string): Promise<SavedRecord | undefined> {
   if (text === undefined) return undefined;
   const parsed = RecordFile.safeParse(parseJson(text));
   if (!parsed.success)
-    throw new Error(`${path} is not a valid ccplaytime record; fix or remove it`);
-  const { scannedAt, secondsByDay, earlier } = parsed.data;
-  return { scannedAt: Date.parse(scannedAt), secondsByDay, earlier };
+    throw new Error(`${path} is not a valid AI Playtime record; fix or remove it`);
+  const { scannedAt, apps, earlier } = parsed.data;
+  return { scannedAt: Date.parse(scannedAt), apps, earlier };
 }
 
 async function saveRecord(path: string, record: SavedRecord): Promise<void> {
+  await mkdir(dirname(path), { recursive: true });
   const temp = `${path}.${String(process.pid)}.tmp`;
   const json = { version: 1, ...record, scannedAt: new Date(record.scannedAt).toISOString() };
   await writeFile(temp, `${JSON.stringify(json, null, 2)}\n`);
   await rename(temp, path);
 }
 
-async function countLaunches(paths: ClaudePaths, sessions: number, summary: Summary) {
-  const launches = await loadLaunches(paths.configs);
-  return launches === undefined ? null : countEarlier(launches, sessions, summary.measuredSince);
+function countsLaunches(saved: SavedRecord | undefined): boolean {
+  return saved?.apps["claude-code"] === undefined;
+}
+
+function isCalibrating(saved: SavedRecord | undefined): boolean {
+  return countsLaunches(saved) || saved?.earlier?.bounds === null;
 }
 
 async function estimate(
-  paths: ClaudePaths,
+  claude: ClaudePaths,
   sessions: Session[],
   summary: Summary,
   saved: SavedRecord | undefined,
 ): Promise<Earlier | null> {
-  const interactive = sessions.filter((session) => session.interactive);
-  const earlier =
-    saved === undefined ? await countLaunches(paths, interactive.length, summary) : saved.earlier;
+  const terminal = sessions
+    .filter((session) => session.interactive)
+    .map((session) => session.timestamps["claude-code"]);
+  let earlier = saved?.earlier ?? null;
+  if (countsLaunches(saved)) {
+    const launches = await loadLaunches(claude.configs);
+    earlier =
+      launches === undefined
+        ? null
+        : countEarlier(launches, terminal.length, summary.measuredSince);
+  }
   if (earlier === null) return null;
   const calibration = {
-    sessionSeconds: interactive.map((session) => activeSeconds(session.timestamps)),
-    wallSeconds: activeSeconds(interactive.flatMap((session) => session.timestamps)),
+    sessionSeconds: terminal.map((timestamps) => activeSeconds(timestamps)),
+    wallSeconds: activeSeconds(terminal.flat()),
   };
   return { ...earlier, bounds: calibrate(earlier.launches, calibration) };
 }
 
-async function track(paths: ClaudePaths, now: number): Promise<Tracked | undefined> {
-  const recordPath = join(paths.dir, "ccplaytime.json");
-  const saved = await loadRecord(recordPath);
-  const calibrating = saved === undefined || saved.earlier?.bounds === null;
-  const since = calibrating ? 0 : rescanFrom(saved.scannedAt, now);
-  const sessions = await scanSessions(paths.projects, since);
-  const scanned = activeSecondsByDay(sessions.flatMap((session) => session.timestamps));
-  const record = mergeRecord(saved?.secondsByDay ?? {}, scanned);
-  const summary = summarize(record, now);
-  if (summary === undefined) return undefined;
-  const earlier = calibrating ? await estimate(paths, sessions, summary, saved) : saved.earlier;
-  await saveRecord(recordPath, { scannedAt: now, secondsByDay: record, earlier });
-  return { record, summary, earlier, newRecordPath: saved === undefined ? recordPath : undefined };
+async function scan(paths: Paths, saved: SavedRecord | undefined, now: number) {
+  const since = rescanFrom(saved?.scannedAt, now);
+  const [sessions, codex] = await Promise.all([
+    scanSessions(paths.claude, isCalibrating(saved) ? 0 : since),
+    scanCodex(paths.codex, since),
+  ]);
+  const scanned: Record<App, number[]> = {
+    "claude-code": sessions.flatMap((session) => session.timestamps["claude-code"]),
+    codex: codex.codex,
+    chatgpt: codex.chatgpt,
+    claude: sessions.flatMap((session) => session.timestamps.claude),
+  };
+  const days: Days = {};
+  for (const app of APPS) {
+    const merged = mergeRecord(saved?.apps[app] ?? {}, activeSecondsByDay(scanned[app]));
+    if (Object.keys(merged).length > 0) days[app] = merged;
+  }
+  return { sessions, days };
+}
+
+function estimatedSeconds(earlier: Earlier | null): number {
+  return earlier?.bounds ? midpoint(earlier.bounds) : 0;
+}
+
+function secondsOf(time: AppTime): number {
+  return time.summary.secondsMeasured + estimatedSeconds(time.earlier);
+}
+
+async function track(paths: Paths, now: number): Promise<Tracked | undefined> {
+  const saved = await loadRecord(paths.record);
+  const { sessions, days } = await scan(paths, saved, now);
+  const total = summarize(addDays(Object.values(days)), now);
+  if (total === undefined) return undefined;
+  const claudeCode = summarize(days["claude-code"] ?? {}, now);
+  let earlier = saved?.earlier ?? null;
+  if (isCalibrating(saved) && claudeCode !== undefined) {
+    earlier = await estimate(paths.claude, sessions, claudeCode, saved);
+  }
+  await saveRecord(paths.record, { scannedAt: now, apps: days, earlier });
+  const apps = APPS.flatMap((app) => {
+    const summary = summarize(days[app] ?? {}, now);
+    if (summary === undefined) return [];
+    return [{ app, summary, earlier: app === "claude-code" ? earlier : null }];
+  }).sort((a, b) => secondsOf(b) - secondsOf(a));
+  const newRecordPath = saved === undefined ? paths.record : undefined;
+  return { apps, days, total, earlier, newRecordPath };
 }
 
 function hours(seconds: number): string {
@@ -151,6 +227,10 @@ function hours(seconds: number): string {
 
 function wholeHours(seconds: number): string {
   return Math.round(seconds / 3600).toLocaleString("en-US");
+}
+
+function played(measured: number, estimated: number): string {
+  return estimated === 0 ? hours(measured) : `~${wholeHours(measured + estimated)}`;
 }
 
 function sparkline(values: readonly number[]): string {
@@ -166,45 +246,44 @@ function longDate(day: string): string {
   return `${String(date.getUTCDate())} ${MONTHS.slice(month, month + 3)} ${String(date.getUTCFullYear())}`;
 }
 
-function estimatedSeconds(earlier: Earlier | null): number {
-  return earlier?.bounds ? midpoint(earlier.bounds) : 0;
+function since(total: Summary, earlier: Earlier | null): string {
+  return earlier?.bounds && earlier.since < total.measuredSince
+    ? earlier.since
+    : total.measuredSince;
 }
 
-function launchCount(launches: number): string {
-  return `${launches.toLocaleString("en-US")} earlier launch${launches === 1 ? "" : "es"}`;
+function sinceLine(total: Summary, earlier: Earlier | null): string {
+  const date = `since ${longDate(since(total, earlier))}`;
+  if (earlier === null) return date;
+  const count = earlier.launches.toLocaleString("en-US");
+  const launches = `${count} earlier launch${earlier.launches === 1 ? "" : "es"}`;
+  return earlier.bounds === null
+    ? `${date} (${launches} get estimated after ${String(CALIBRATION_SESSIONS)} sessions)`
+    : `${date} (~${wholeHours(midpoint(earlier.bounds))} hrs estimated from ${launches})`;
 }
 
-function historyLines(summary: Summary, earlier: Earlier | null): string[] {
-  const measuredSince = longDate(summary.measuredSince);
-  if (earlier === null) return [`on record since ${measuredSince}`];
-  const { bounds } = earlier;
-  const estimated =
-    bounds === null
-      ? `${launchCount(earlier.launches)}, estimated once ${String(CALIBRATION_SESSIONS)} sessions are measured`
-      : `~${wholeHours(midpoint(bounds))} hrs estimated from ${launchCount(earlier.launches)} (${wholeHours(bounds.lowSeconds)}–${wholeHours(bounds.highSeconds)})`;
-  return [`playing since ${longDate(earlier.since)}, measured since ${measuredSince}`, estimated];
-}
-
-function render({ summary, earlier, newRecordPath }: Tracked): string {
+function render({ apps, total, earlier, newRecordPath }: Tracked): string {
   const accent = (text: string) => styleText(["bold", "yellow"], text);
-  const estimated = estimatedSeconds(earlier);
-  const total =
-    estimated === 0
-      ? hours(summary.secondsMeasured)
-      : `~${wholeHours(summary.secondsMeasured + estimated)}`;
+  const breakdown = apps
+    .map(
+      (time) =>
+        `${LABELS[time.app]} ${played(time.summary.secondsMeasured, estimatedSeconds(time.earlier))}`,
+    )
+    .join(" · ");
   const lines = [
     "",
-    `  ${styleText("yellow", "▶")} ${styleText("bold", "Claude Code")}`,
-    `    ${accent(total)} hrs on record`,
-    `    ${accent(hours(summary.secondsLastTwoWeeks))} hrs last two weeks  ${styleText("yellow", sparkline(summary.lastTwoWeeks))}`,
-    ...historyLines(summary, earlier).map((line) => styleText("dim", `    ${line}`)),
+    `  ${styleText("yellow", "▶")} ${styleText("bold", "AI Playtime")}`,
+    `    ${accent(played(total.secondsMeasured, estimatedSeconds(earlier)))} hrs on record`,
+    `    ${accent(hours(total.secondsLastTwoWeeks))} hrs last two weeks  ${styleText("yellow", sparkline(total.lastTwoWeeks))}`,
+    `    ${breakdown}`,
+    styleText("dim", `    ${sinceLine(total, earlier)}`),
     "",
   ];
   if (newRecordPath !== undefined) {
     lines.push(
       styleText(
         "dim",
-        `  Saved to ${newRecordPath}. Claude Code deletes transcripts after 30 days,\n  so run ccplaytime at least that often to keep your record complete.`,
+        `  Saved to ${newRecordPath}. Claude Code deletes transcripts after 30 days,\n  so run ai-playtime at least that often to keep your record complete.`,
       ),
       "",
     );
@@ -212,22 +291,38 @@ function render({ summary, earlier, newRecordPath }: Tracked): string {
   return lines.join("\n");
 }
 
-function toJson({ record, summary, earlier }: Tracked): string {
-  const toHours = (seconds: number) => Math.round(seconds / 36) / 100;
+function toHours(seconds: number): number {
+  return Math.round(seconds / 36) / 100;
+}
+
+function appJson({ app, summary, earlier }: AppTime, days: Days) {
   const measured = toHours(summary.secondsMeasured);
   const estimated = toHours(estimatedSeconds(earlier));
   const bounds = earlier?.bounds ?? null;
-  const json = {
-    hoursOnRecord: Math.round((measured + estimated) * 100) / 100,
+  return {
+    app: LABELS[app],
+    hours: Math.round((measured + estimated) * 100) / 100,
     hoursMeasured: measured,
     hoursEstimated: estimated,
     hoursEstimatedRange:
       bounds === null ? null : [toHours(bounds.lowSeconds), toHours(bounds.highSeconds)],
-    hoursLastTwoWeeks: toHours(summary.secondsLastTwoWeeks),
-    playingSince: earlier?.since ?? summary.measuredSince,
-    measuredSince: summary.measuredSince,
     earlierLaunches: earlier?.launches ?? 0,
-    secondsByDay: record,
+    hoursLastTwoWeeks: toHours(summary.secondsLastTwoWeeks),
+    secondsByDay: days[app] ?? {},
+  };
+}
+
+function toJson(tracked: Tracked): string {
+  const apps = tracked.apps.map((time) => appJson(time, tracked.days));
+  const addUp = (field: "hours" | "hoursMeasured" | "hoursEstimated" | "hoursLastTwoWeeks") =>
+    Math.round(apps.reduce((sum, app) => sum + app[field], 0) * 100) / 100;
+  const json = {
+    hoursOnRecord: addUp("hours"),
+    hoursMeasured: addUp("hoursMeasured"),
+    hoursEstimated: addUp("hoursEstimated"),
+    hoursLastTwoWeeks: addUp("hoursLastTwoWeeks"),
+    since: since(tracked.total, tracked.earlier),
+    apps,
   };
   return `${JSON.stringify(json)}\n`;
 }
@@ -256,20 +351,19 @@ async function main(): Promise<number> {
     command = parseCommand();
   } catch (error) {
     if (!(error instanceof TypeError)) throw error;
-    process.stderr.write(`ccplaytime: ${error.message}\n\n${USAGE}\n`);
+    process.stderr.write(`ai-playtime: ${error.message}\n\n${USAGE}\n`);
     return 2;
   }
   if (command === "help" || command === "version") {
     process.stdout.write(`${command === "help" ? USAGE : pkg.version}\n`);
     return 0;
   }
-  const paths = claudePaths(process.env);
-  const tracked = await track(paths, Date.now());
+  const tracked = await track(paths(process.env), Date.now());
   if (tracked === undefined) {
     process.stdout.write(
       command === "json"
         ? `${JSON.stringify(NO_ACTIVITY_JSON)}\n`
-        : `No Claude Code activity found in ${paths.dir}\n`,
+        : "No Claude Code, Codex, ChatGPT app or Claude app activity found\n",
     );
     return 0;
   }
@@ -278,6 +372,6 @@ async function main(): Promise<number> {
 }
 
 process.exitCode = await main().catch((error: unknown) => {
-  process.stderr.write(`ccplaytime: ${error instanceof Error ? error.message : String(error)}\n`);
+  process.stderr.write(`ai-playtime: ${error instanceof Error ? error.message : String(error)}\n`);
   return 1;
 });

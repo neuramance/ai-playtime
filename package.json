@@ -1,21 +1,23 @@
 {
-  "name": "ccplaytime",
+  "name": "ai-playtime",
   "version": "0.1.0",
-  "description": "Steam-style hours played for Claude Code.",
+  "description": "Steam-style hours played across Claude Code, Codex, the ChatGPT app and the Claude app.",
   "keywords": [
-    "claude-code",
-    "claude",
+    "ai",
     "playtime",
-    "hours",
+    "claude-code",
+    "codex",
+    "chatgpt",
+    "claude",
     "time-tracking",
     "cli"
   ],
   "author": "neuramance",
-  "repository": "github:neuramance/ccplaytime",
+  "repository": "github:neuramance/ai-playtime",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "ccplaytime": "dist/cli.js"
+    "ai-playtime": "dist/cli.js"
   },
   "files": [
     "dist"
@@ -24,7 +26,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "bun build src/cli.ts --target=node --minify --outfile=${OUT:-dist}/cli.js && node ${OUT:-dist}/cli.js --help | grep -q 'Usage: ccplaytime'",
+    "build": "bun build src/cli.ts --target=node --minify --outfile=${OUT:-dist}/cli.js && node ${OUT:-dist}/cli.js --help | grep -q 'Usage: ai-playtime'",
     "check": "scripts/agent-verify",
     "verify": "scripts/agent-verify && vitest run scripts",
     "prepare": "[ ! -e .git ] || git config core.hooksPath .githooks",

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="t">
-  <title id="t">ccplaytime</title>
+  <title id="t">AI Playtime</title>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0d1117"/>
@@ -9,7 +9,7 @@
       <stop offset="0" stop-color="#ff8a3d"/>
       <stop offset="1" stop-color="#ffd166"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.68" cy="0.5" r="0.5">
+    <radialGradient id="glow" cx="0.65" cy="0.5" r="0.5">
       <stop offset="0" stop-color="#ff8a3d" stop-opacity="0.14"/>
       <stop offset="1" stop-color="#ff8a3d" stop-opacity="0"/>
     </radialGradient>
@@ -36,34 +36,36 @@
   <rect width="1280" height="640" rx="28" fill="url(#grid)" mask="url(#gridfade)"/>
   <rect x="0.5" y="0.5" width="1279" height="639" rx="27.5" fill="none" stroke="#fff" stroke-opacity="0.08"/>
 
-  <path d="M83.5 277L110.5 292.5L83.5 308Z" fill="#ff8a3d" stroke="#ff8a3d" stroke-width="6.75" stroke-linejoin="round" opacity="0.55" filter="url(#blur)"/>
-  <path d="M83.5 277L110.5 292.5L83.5 308Z" fill="url(#accent)" stroke="url(#accent)" stroke-width="6.75" stroke-linejoin="round"/>
-  <text x="131.5" y="311.5" fill="#e6edf3" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="54" font-weight="700" letter-spacing="-1.25">ccplaytime</text>
-  <text x="80" y="360.5" fill="#8b949e" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="23">Hours played, for Claude Code.</text>
+  <path d="M83.25 263.3L109.25 278.2L83.25 293.1Z" fill="#ff8a3d" stroke="#ff8a3d" stroke-width="6.5" stroke-linejoin="round" opacity="0.55" filter="url(#blur)"/>
+  <path d="M83.25 263.3L109.25 278.2L83.25 293.1Z" fill="url(#accent)" stroke="url(#accent)" stroke-width="6.5" stroke-linejoin="round"/>
+  <g font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="131" y="296.5" fill="#e6edf3" font-size="52" font-weight="700" letter-spacing="-1.25">AI Playtime</text>
+    <text x="80" y="345.5" fill="#8b949e" font-size="23">Hours played,<tspan x="80" dy="30">across your AI apps.</tspan></text>
+  </g>
 
-  <rect x="504" y="171" width="696" height="298" rx="14" fill="#0a0d12" filter="url(#shadow)"/>
-  <path d="M504 215V185a14 14 0 0 1 14-14H1186a14 14 0 0 1 14 14V215Z" fill="#12171e"/>
-  <path d="M504 215.5H1200" stroke="#21262d"/>
-  <rect x="504.5" y="171.5" width="695" height="297" rx="13.5" fill="none" stroke="#30363d"/>
+  <rect x="454" y="171" width="746" height="298" rx="14" fill="#0a0d12" filter="url(#shadow)"/>
+  <path d="M454 215V185a14 14 0 0 1 14-14H1186a14 14 0 0 1 14 14V215Z" fill="#12171e"/>
+  <path d="M454 215.5H1200" stroke="#21262d"/>
+  <rect x="454.5" y="171.5" width="745" height="297" rx="13.5" fill="none" stroke="#30363d"/>
   <g fill="#3a414a">
-    <circle cx="528" cy="193" r="6"/>
-    <circle cx="548" cy="193" r="6"/>
-    <circle cx="568" cy="193" r="6"/>
+    <circle cx="478" cy="193" r="6"/>
+    <circle cx="498" cy="193" r="6"/>
+    <circle cx="518" cy="193" r="6"/>
   </g>
 
   <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-    <text x="852" y="198.5" fill="#8b949e" font-size="15" text-anchor="middle">~ npx ccplaytime</text>
-    <g font-size="17">
-      <text x="536" y="252" fill="#6e7681">$ npx ccplaytime</text>
-      <text x="557.02" y="312" fill="#e6edf3" font-weight="700">Claude Code</text>
-      <text x="557.02" y="342" fill="#e6edf3"><tspan fill="#ffd166" font-weight="700">~812</tspan> hrs on record</text>
-      <text x="557.02" y="372" fill="#e6edf3" textLength="241.7"><tspan fill="#ffd166" font-weight="700">34.2</tspan> hrs last two weeks</text>
-      <text x="557.02" y="402" fill="#6e7681">playing since 23 Jun 2025, measured since 30 Aug 2026</text>
-      <text x="557.02" y="432" fill="#6e7681">~731 hrs estimated from 1,187 earlier launches (402–1,329)</text>
+    <text x="827" y="198.5" fill="#8b949e" font-size="15" text-anchor="middle">~ npx ai-playtime</text>
+    <g font-size="16">
+      <text x="486" y="252" fill="#6e7681">$ npx ai-playtime</text>
+      <text x="505.78" y="312" fill="#e6edf3" font-weight="700">AI Playtime</text>
+      <text x="505.78" y="342" fill="#e6edf3"><tspan fill="#ffd166" font-weight="700">~1,024</tspan> hrs on record</text>
+      <text x="505.78" y="372" fill="#e6edf3" textLength="227.4"><tspan fill="#ffd166" font-weight="700">96.3</tspan> hrs last two weeks</text>
+      <text x="505.78" y="402" fill="#e6edf3">Claude Code ~812<tspan fill="#6e7681"> · </tspan>Codex 104.5<tspan fill="#6e7681"> · </tspan>ChatGPT app 88.2<tspan fill="#6e7681"> · </tspan>Claude app 19.1</text>
+      <text x="505.78" y="432" fill="#6e7681">since 23 Jun 2025 (~731 hrs estimated from 1,187 earlier launches)</text>
     </g>
   </g>
-  <path d="M537.2 300.3L544.9 306.3L537.2 312.4Z" fill="url(#accent)" stroke="url(#accent)" stroke-width="2.4" stroke-linejoin="round"/>
-  <g fill="#ff8a3d" transform="translate(821.34 374.4)">
+  <path d="M487.1 301L494.4 306.7L487.1 312.4Z" fill="url(#accent)" stroke="url(#accent)" stroke-width="2.3" stroke-linejoin="round"/>
+  <g fill="#ff8a3d" transform="translate(754.46 374.26) scale(0.941)">
     <rect x="0" y="-5.7" width="7.3" height="5.7" rx="1.6"/>
     <rect x="10.51" y="-11.7" width="7.3" height="11.7" rx="1.6"/>
     <rect x="21.02" y="-15.8" width="7.3" height="15.8" rx="1.6"/>

@@ -1,21 +1,27 @@
-import { createReadStream, type Dirent } from "node:fs";
-import { readdir, readFile, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { createInterface } from "node:readline";
 import * as z from "zod/mini";
+import { isMissing, jsonlFiles, parseJson, readIfPresent } from "./files.ts";
 import type { Launches } from "./playtime.ts";
 
+export type ClaudeApp = "claude-code" | "claude";
+
 export interface ClaudePaths {
-  dir: string;
   projects: string;
+  cowork: string;
   configs: readonly string[];
 }
 
 export interface Session {
   interactive: boolean;
-  timestamps: number[];
+  timestamps: Record<ClaudeApp, number[]>;
 }
+
+const JSONL = /\.jsonl$/;
+const COWORK_PROJECTS = `${sep}.claude${sep}projects${sep}`;
 
 const TranscriptEntry = z.object({
   timestamp: z.iso.datetime({ offset: true }),
@@ -26,34 +32,19 @@ const ClaudeConfig = z.object({
   firstStartTime: z.optional(z.iso.datetime({ offset: true })),
 });
 
-function isMissing(error: unknown): boolean {
-  return error instanceof Error && "code" in error && error.code === "ENOENT";
-}
-
-export function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-}
-
-export async function readIfPresent(path: string): Promise<string | undefined> {
-  try {
-    return await readFile(path, "utf8");
-  } catch (error) {
-    if (isMissing(error)) return undefined;
-    throw error;
-  }
-}
-
 export function claudePaths(env: NodeJS.ProcessEnv): ClaudePaths {
   const configured = env.CLAUDE_CONFIG_DIR?.trim() ?? "";
   const dir = configured === "" ? join(homedir(), ".claude") : configured;
   const configDir = configured === "" ? homedir() : configured;
   return {
-    dir,
     projects: join(dir, "projects"),
+    cowork: join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "Claude",
+      "local-agent-mode-sessions",
+    ),
     configs: [join(dir, ".config.json"), join(configDir, ".claude.json")],
   };
 }
@@ -64,44 +55,57 @@ function parseEntry(line: string) {
   return entry.success ? entry.data : undefined;
 }
 
-async function scanFile(path: string, since: number, session: Session) {
+function appOf(entrypoint: string, host: ClaudeApp): ClaudeApp {
+  return host === "claude" || entrypoint.startsWith("claude-desktop") ? "claude" : "claude-code";
+}
+
+async function scanFile(path: string, host: ClaudeApp, since: number, session: Session) {
   try {
     if ((await stat(path)).mtimeMs < since) return;
+    let app = host;
     for await (const line of createInterface({
       input: createReadStream(path),
       crlfDelay: Infinity,
     })) {
       const entry = parseEntry(line);
       if (entry === undefined) continue;
+      if (entry.entrypoint !== undefined) app = appOf(entry.entrypoint, host);
       if (entry.entrypoint === "cli") session.interactive = true;
       const time = Date.parse(entry.timestamp);
-      if (time < since) continue;
-      session.timestamps.push(time);
+      if (time >= since) session.timestamps[app].push(time);
     }
   } catch (error) {
-    if (!isMissing(error)) throw error;
+    if (isMissing(error)) return;
+    throw new Error(`could not read ${path}: ${String(error)}`, { cause: error });
   }
 }
 
-export async function scanSessions(projectsDir: string, since: number): Promise<Session[]> {
-  let entries: Dirent[];
-  try {
-    entries = await readdir(projectsDir, { recursive: true, withFileTypes: true });
-  } catch (error) {
-    if (isMissing(error)) return [];
-    throw error;
-  }
+function sessionKey(root: string, path: string): string {
+  return join(root, ...relative(root, path).split(sep).slice(0, 2)).replace(JSONL, "");
+}
+
+export async function scanSessions(paths: ClaudePaths, since: number): Promise<Session[]> {
+  const files = [
+    ...(await jsonlFiles(paths.projects, JSONL)).map((path) => ({
+      path,
+      key: sessionKey(paths.projects, path),
+      app: "claude-code" as const,
+    })),
+    ...(await jsonlFiles(paths.cowork, JSONL)).flatMap((path) => {
+      const at = path.indexOf(COWORK_PROJECTS);
+      if (at === -1) return [];
+      const root = path.slice(0, at + COWORK_PROJECTS.length);
+      return [{ path, key: sessionKey(root, path), app: "claude" as const }];
+    }),
+  ];
   const sessions = new Map<string, Session>();
-  for (const file of entries.filter((e) => e.isFile() && e.name.endsWith(".jsonl"))) {
-    const path = join(file.parentPath, file.name);
-    const parts = relative(projectsDir, path).split(sep);
-    const key = parts
-      .slice(0, 2)
-      .join("/")
-      .replace(/\.jsonl$/, "");
-    const session = sessions.get(key) ?? { interactive: false, timestamps: [] };
+  for (const { path, key, app } of files) {
+    const session = sessions.get(key) ?? {
+      interactive: false,
+      timestamps: { "claude-code": [], claude: [] },
+    };
     sessions.set(key, session);
-    await scanFile(path, since, session);
+    await scanFile(path, app, since, session);
   }
   return [...sessions.values()];
 }

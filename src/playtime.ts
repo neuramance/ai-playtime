@@ -4,7 +4,13 @@ const RECENT_DAYS = 14;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+export const APPS = ["claude-code", "codex", "chatgpt", "claude"] as const;
+
+export type App = (typeof APPS)[number];
+
 export type SecondsByDay = Record<string, number>;
+
+export type Days = Partial<Record<App, SecondsByDay>>;
 
 export interface Summary {
   secondsMeasured: number;
@@ -62,7 +68,8 @@ export function activeSecondsByDay(timestamps: readonly number[]): SecondsByDay 
     const day = dayOf(start);
     msByDay.set(day, (msByDay.get(day) ?? 0) + gap);
   }
-  return Object.fromEntries([...msByDay].map(([day, ms]) => [day, Math.round(ms / 1000)]));
+  const seconds = [...msByDay].map(([day, ms]): [string, number] => [day, Math.round(ms / 1000)]);
+  return Object.fromEntries(seconds.filter(([, total]) => total !== 0));
 }
 
 export function activeSeconds(timestamps: readonly number[]): number {
@@ -95,6 +102,14 @@ export function summarize(record: SecondsByDay, now: number): Summary | undefine
     lastTwoWeeks,
     measuredSince,
   };
+}
+
+export function addDays(records: readonly SecondsByDay[]): SecondsByDay {
+  const total: SecondsByDay = {};
+  for (const record of records) {
+    for (const [day, seconds] of Object.entries(record)) total[day] = (total[day] ?? 0) + seconds;
+  }
+  return total;
 }
 
 export function countEarlier(

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   activeSeconds,
   activeSecondsByDay,
+  addDays,
   calibrate,
   countEarlier,
   mergeRecord,
@@ -27,6 +28,11 @@ describe("activeSecondsByDay", () => {
     expect(activeSecondsByDay([...sessionA, ...sessionB])).toEqual({ "2026-09-01": 420 });
   });
 
+  it("records no day for events that add no time", () => {
+    const start = at("2026-09-01T10:00:00Z");
+    expect(activeSecondsByDay([start, start])).toEqual({});
+  });
+
   it("credits a gap that crosses midnight UTC to the day it started", () => {
     const timestamps = [at("2026-09-01T23:55:00Z"), at("2026-09-02T00:05:00Z")];
     expect(activeSecondsByDay(timestamps)).toEqual({ "2026-09-01": 600 });
@@ -41,6 +47,15 @@ describe("activeSeconds", () => {
       at("2026-09-02T00:05:00Z"),
     ];
     expect(activeSeconds(timestamps)).toBe(900);
+  });
+});
+
+describe("addDays", () => {
+  it("adds each day's seconds across apps", () => {
+    expect(addDays([{ "2026-09-01": 60, "2026-09-02": 30 }, { "2026-09-01": 40 }])).toEqual({
+      "2026-09-01": 100,
+      "2026-09-02": 30,
+    });
   });
 });
 
