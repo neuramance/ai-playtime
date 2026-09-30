@@ -5,6 +5,10 @@ export function isMissing(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
+export function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function parseJson(text: string): unknown {
   try {
     return JSON.parse(text);

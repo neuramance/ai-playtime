@@ -2,17 +2,21 @@ import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 import {
+  DAY,
+  MINUTE,
   emptyDir,
   everyTenMinutes,
   firstRunHint,
   historyHome,
   json,
   launches,
+  onOneUtcDay,
   recordPath,
   rollout,
   run,
   runWith,
   unestimated,
+  utcToday,
   wholeHistory,
   write,
   writeHistory,
@@ -63,7 +67,7 @@ it("counts earlier launches on the first run that has Claude Code sessions", () 
   });
 });
 
-it("waits for 10 measured sessions, then estimates the launches counted on the first run", () => {
+it("waits for 10 terminal sessions on disk, then estimates the launches counted on the first run", () => {
   const home = emptyDir();
   const claude = join(home, ".claude");
   writeSession(claude, "-work/s1", "00:00", 180, "cli");
@@ -76,7 +80,7 @@ it("waits for 10 measured sessions, then estimates the launches counted on the f
       "    4.0 hrs on record",
       "    0.0 hrs last two weeks  ··············",
       "    Claude Code 4.0",
-      "    since 1 Jul 2025 (48 earlier launches get estimated after 10 sessions)",
+      "    since 1 Jul 2025 (48 earlier launches; estimate needs 10 sessions on disk)",
       "",
       ...firstRunHint(home),
     ].join("\n"),
@@ -136,4 +140,25 @@ it("shows every app on one line and a single since date", () => {
       ...firstRunHint(home),
     ].join("\n"),
   );
+});
+
+it("formats thousands, faint days and an earlier first day from another app", () => {
+  onOneUtcDay(() => {
+    const today = utcToday();
+    const home = historyHome(launches(2010));
+    const codex = (name: string, times: number[]) =>
+      write(home, `.codex/sessions/${name}.jsonl`, rollout("codex-tui", times));
+    codex("rollout-june", everyTenMinutes("2025-06-01T00:00:00Z", 30));
+    codex(
+      "rollout-busy",
+      Array.from({ length: 13 }, (_, i) => today - 3 * DAY + i * 10 * MINUTE),
+    );
+    codex("rollout-faint", [today - 2 * DAY, today - 2 * DAY + 10 * MINUTE]);
+    expect(run(home).stdout.split("\n").slice(2, 6)).toEqual([
+      "    ~1,277 hrs on record",
+      "    2.2 hrs last two weeks  ··········█▁··",
+      "    Claude Code ~1,274 · Codex 2.7",
+      "    since 1 Jun 2025 (~1,265 hrs estimated from 2,000 earlier launches)",
+    ]);
+  });
 });

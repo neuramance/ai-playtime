@@ -134,6 +134,11 @@ it("rejects paths outside the repository, including through symlinks", () => {
   expect(gate(join(copy, "src/escape.ts")).status).toBe(2);
 });
 
+it("checks an in-repository file whose name starts with two dots", () => {
+  const [path = ""] = plant({ "..notes.md": "Notes\n" });
+  expect(gate(path).output).toMatch(/^agent-verify: passed format in \d+\.\ds\n$/);
+});
+
 it("labels a focused run with only deleted files as skipped", () => {
   expect(gate(join(copy, "src/deleted.ts"))).toEqual({
     status: 0,

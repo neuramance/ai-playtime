@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { extname, isAbsolute, join, relative, resolve } from "node:path";
+import { extname, isAbsolute, join, relative, sep } from "node:path";
 
 const ROOT = realpathSync(join(import.meta.dirname, ".."));
 const BIN = join(ROOT, "node_modules", ".bin");
@@ -34,17 +34,16 @@ function full(buildDir: string): Check[] {
 }
 
 function inRepository(path: string): string {
-  const absolute = resolve(path);
-  const real = existsSync(absolute) ? realpathSync(absolute) : absolute;
+  const real = realpathSync(path);
   const inside = relative(ROOT, real);
-  if (inside.startsWith("..") || isAbsolute(inside)) {
+  if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) {
     throw new Error(`${path} is outside the repository ${ROOT}`);
   }
   return real;
 }
 
 function focused(paths: string[]): Check[] {
-  const files = paths.map(inRepository).filter((file) => existsSync(file));
+  const files = paths.filter((path) => existsSync(path)).map(inRepository);
   const lintable = files.filter((file) => LINTED.has(extname(file)));
   const checks: Check[] = [];
   if (files.length > 0) {

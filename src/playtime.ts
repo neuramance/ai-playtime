@@ -24,7 +24,7 @@ export interface Launches {
   firstStart: number;
 }
 
-export interface Bounds {
+interface Bounds {
   lowSeconds: number;
   highSeconds: number;
 }
@@ -35,7 +35,7 @@ export interface Earlier {
   bounds: Bounds | null;
 }
 
-export interface Calibration {
+interface Calibration {
   sessionSeconds: readonly number[];
   wallSeconds: number;
 }

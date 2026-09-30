@@ -4,10 +4,10 @@ import { homedir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { createInterface } from "node:readline";
 import * as z from "zod/mini";
-import { isMissing, jsonlFiles, parseJson, readIfPresent } from "./files.ts";
+import { isMissing, jsonlFiles, messageOf, parseJson, readIfPresent } from "./files.ts";
 import type { Launches } from "./playtime.ts";
 
-export type ClaudeApp = "claude-code" | "claude";
+type ClaudeApp = "claude-code" | "claude";
 
 export interface ClaudePaths {
   projects: string;
@@ -76,7 +76,7 @@ async function scanFile(path: string, host: ClaudeApp, since: number, session: S
     }
   } catch (error) {
     if (isMissing(error)) return;
-    throw new Error(`could not read ${path}: ${String(error)}`, { cause: error });
+    throw new Error(`could not read ${path}: ${messageOf(error)}`, { cause: error });
   }
 }
 
@@ -91,12 +91,9 @@ export async function scanSessions(paths: ClaudePaths, since: number): Promise<S
       key: sessionKey(paths.projects, path),
       app: "claude-code" as const,
     })),
-    ...(await jsonlFiles(paths.cowork, JSONL)).flatMap((path) => {
-      const at = path.indexOf(COWORK_PROJECTS);
-      if (at === -1) return [];
-      const root = path.slice(0, at + COWORK_PROJECTS.length);
-      return [{ path, key: sessionKey(root, path), app: "claude" as const }];
-    }),
+    ...(await jsonlFiles(paths.cowork, JSONL))
+      .filter((path) => path.includes(COWORK_PROJECTS))
+      .map((path) => ({ path, key: path, app: "claude" as const })),
   ];
   const sessions = new Map<string, Session>();
   for (const { path, key, app } of files) {

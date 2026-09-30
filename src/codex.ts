@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { createZstdDecompress } from "node:zlib";
 import * as z from "zod/mini";
-import { isMissing, jsonlFiles, parseJson } from "./files.ts";
+import { isMissing, jsonlFiles, messageOf, parseJson } from "./files.ts";
 
 type CodexApp = "codex" | "chatgpt";
 
@@ -59,7 +59,7 @@ async function scanRollout(path: string, since: number, found: Record<CodexApp, 
     }
   } catch (error) {
     if (isMissing(error)) return;
-    throw new Error(`could not read ${path}: ${String(error)}`, { cause: error });
+    throw new Error(`could not read ${path}: ${messageOf(error)}`, { cause: error });
   }
 }
 

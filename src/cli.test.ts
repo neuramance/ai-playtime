@@ -1,5 +1,5 @@
-import { spawn } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, rmSync, utimesSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { zstdCompressSync } from "node:zlib";
 import pkg from "../package.json" with { type: "json" };
@@ -19,23 +19,26 @@ import {
   firstRunHint,
   halfHourYesterday,
   json,
+  onOneUtcDay,
   recordPath,
   rollout,
   run,
   runWith,
   saveRecord,
-  today,
+  utcToday,
   write,
   writeSession,
   yesterdayAt,
 } from "./fixtures.ts";
 
 it("measures wall-clock active time across sessions and subagents, skipping idle gaps", () => {
-  const { status, stdout, stderr } = run(claudeHome(), "--json");
-  expect({ status, stderr, json: JSON.parse(stdout) as unknown }).toEqual({
-    status: 0,
-    stderr: "",
-    json: halfHourYesterday,
+  onOneUtcDay(() => {
+    const { status, stdout, stderr } = run(claudeHome(), "--json");
+    expect({ status, stderr, json: JSON.parse(stdout) as unknown }).toEqual({
+      status: 0,
+      stderr: "",
+      json: halfHourYesterday(),
+    });
   });
 });
 
@@ -114,19 +117,22 @@ it("gives desktop Code-tab and Cowork transcripts to the Claude app", () => {
 });
 
 it("splits a session continued from the terminal into the desktop app", () => {
-  const home = emptyDir();
-  const session = ".claude/projects/-work/s1.jsonl";
-  const start = today + 10 * 60 * MINUTE;
-  write(home, session, events([start, start + 10 * MINUTE], "cli"));
-  run(home, "--json");
-  const desktop = events([start + 20 * MINUTE], "claude-desktop") + events([start + 30 * MINUTE]);
-  appendFileSync(join(home, session), desktop);
-  expect(json(home)).toMatchObject({
-    hoursOnRecord: 0.34,
-    apps: [
-      { app: "Claude Code", secondsByDay: { [dayKey(today)]: 600 } },
-      { app: "Claude app", secondsByDay: { [dayKey(today)]: 600 } },
-    ],
+  onOneUtcDay(() => {
+    const today = utcToday();
+    const home = emptyDir();
+    const session = ".claude/projects/-work/s1.jsonl";
+    const start = today + 10 * 60 * MINUTE;
+    write(home, session, events([start, start + 10 * MINUTE], "cli"));
+    run(home, "--json");
+    const desktop = events([start + 20 * MINUTE], "claude-desktop") + events([start + 30 * MINUTE]);
+    appendFileSync(join(home, session), desktop);
+    expect(json(home)).toMatchObject({
+      hoursOnRecord: 0.34,
+      apps: [
+        { app: "Claude Code", secondsByDay: { [dayKey(today)]: 600 } },
+        { app: "Claude app", secondsByDay: { [dayKey(today)]: 600 } },
+      ],
+    });
   });
 });
 
@@ -158,51 +164,61 @@ it("adds up each app's time even when apps run at the same time", () => {
 });
 
 it("keeps the record after Claude Code deletes the transcripts", () => {
-  const home = claudeHome();
-  run(home, "--json");
-  rmSync(join(home, ".claude/projects"), { recursive: true });
-  expect(json(home)).toEqual(halfHourYesterday);
+  onOneUtcDay(() => {
+    const home = claudeHome();
+    run(home, "--json");
+    rmSync(join(home, ".claude/projects"), { recursive: true });
+    expect(json(home)).toEqual(halfHourYesterday());
+  });
 });
 
 it("counts activity added after the previous run", () => {
-  const home = claudeHome();
-  run(home, "--json");
-  appendFileSync(
-    join(home, ".claude/projects/-work/s1.jsonl"),
-    events([today + 60 * MINUTE, today + 70 * MINUTE]),
-  );
-  expect(json(home)).toMatchObject({
-    apps: [{ secondsByDay: { [dayKey(today - DAY)]: 1800, [dayKey(today)]: 600 } }],
+  onOneUtcDay(() => {
+    const today = utcToday();
+    const home = claudeHome();
+    run(home, "--json");
+    appendFileSync(
+      join(home, ".claude/projects/-work/s1.jsonl"),
+      events([today + 60 * MINUTE, today + 70 * MINUTE]),
+    );
+    expect(json(home)).toMatchObject({
+      apps: [{ secondsByDay: { [dayKey(today - DAY)]: 1800, [dayKey(today)]: 600 } }],
+    });
   });
 });
 
 it("keeps saved days that the rescan window only partly covers", () => {
-  const home = emptyDir();
-  const early = today - 3 * DAY;
-  saveRecord(home, today - DAY + 12 * 60 * MINUTE, {
-    [dayKey(early)]: 420,
-    [dayKey(early + DAY)]: 360,
-  });
-  write(
-    home,
-    ".claude/projects/-work/s1.jsonl",
-    events([
-      early + DAY - 5 * MINUTE,
-      early + DAY + 8 * MINUTE,
-      today + 60 * MINUTE,
-      today + 70 * MINUTE,
-    ]),
-  );
-  const untouched = write(
-    home,
-    ".claude/projects/-work/s2.jsonl",
-    events([early + DAY + 2 * MINUTE]),
-  );
-  utimesSync(untouched, new Date(early + DAY + 3 * MINUTE), new Date(early + DAY + 3 * MINUTE));
-  expect(json(home)).toMatchObject({
-    apps: [
-      { secondsByDay: { [dayKey(early)]: 420, [dayKey(early + DAY)]: 360, [dayKey(today)]: 600 } },
-    ],
+  onOneUtcDay(() => {
+    const today = utcToday();
+    const home = emptyDir();
+    const early = today - 3 * DAY;
+    saveRecord(home, today - DAY + 12 * 60 * MINUTE, {
+      [dayKey(early)]: 420,
+      [dayKey(early + DAY)]: 360,
+    });
+    write(
+      home,
+      ".claude/projects/-work/s1.jsonl",
+      events([
+        early + DAY - 5 * MINUTE,
+        early + DAY + 8 * MINUTE,
+        today + 60 * MINUTE,
+        today + 70 * MINUTE,
+      ]),
+    );
+    const untouched = write(
+      home,
+      ".claude/projects/-work/s2.jsonl",
+      events([early + DAY + 2 * MINUTE]),
+    );
+    utimesSync(untouched, new Date(early + DAY + 3 * MINUTE), new Date(early + DAY + 3 * MINUTE));
+    expect(json(home)).toMatchObject({
+      apps: [
+        {
+          secondsByDay: { [dayKey(early)]: 420, [dayKey(early + DAY)]: 360, [dayKey(today)]: 600 },
+        },
+      ],
+    });
   });
 });
 
@@ -230,22 +246,42 @@ it("prints a Steam-style card and explains the saved record on the first run", (
 });
 
 it("adds scanned days to a saved record and scales the sparkline to the busiest day", () => {
-  const home = claudeHome();
-  saveRecord(home, at("2025-06-24T00:00:00Z"), {
-    "2025-06-23": 5400,
-    [dayKey(today - 3 * DAY)]: 3600,
+  onOneUtcDay(() => {
+    const today = utcToday();
+    const home = claudeHome();
+    saveRecord(home, at("2025-06-24T00:00:00Z"), {
+      "2025-06-23": 5400,
+      [dayKey(today - 3 * DAY)]: 3600,
+    });
+    expect(run(home).stdout).toBe(
+      [
+        "",
+        "  ▶ AI Playtime",
+        "    3.0 hrs on record",
+        "    1.5 hrs last two weeks  ··········█·▄·",
+        "    Claude Code 3.0",
+        "    since 23 Jun 2025",
+        "",
+      ].join("\n"),
+    );
   });
-  expect(run(home).stdout).toBe(
-    [
-      "",
-      "  ▶ AI Playtime",
-      "    3.0 hrs on record",
-      "    1.5 hrs last two weeks  ··········█·▄·",
-      "    Claude Code 3.0",
-      "    since 23 Jun 2025",
-      "",
-    ].join("\n"),
-  );
+});
+
+it("keeps the previous record as a backup", () => {
+  const home = claudeHome();
+  run(home, "--json");
+  const first = readFileSync(recordPath(home), "utf8");
+  run(home, "--json");
+  expect(readFileSync(`${recordPath(home)}.bak`, "utf8")).toBe(first);
+});
+
+it("ignores a relative XDG_DATA_HOME", () => {
+  const home = claudeHome();
+  runWith({ HOME: home, XDG_DATA_HOME: "relative" }, "--json");
+  expect({
+    saved: existsSync(recordPath(home)),
+    stray: existsSync(join(home, "relative")),
+  }).toEqual({ saved: true, stray: false });
 });
 
 it("refuses to overwrite a corrupt record", () => {
@@ -254,8 +290,18 @@ it("refuses to overwrite a corrupt record", () => {
   expect({ ...run(home), record: readFileSync(recordPath(home), "utf8") }).toEqual({
     status: 1,
     stdout: "",
-    stderr: `ai-playtime: ${recordPath(home)} is not a valid AI Playtime record; fix or remove it\n`,
+    stderr: `ai-playtime: ${recordPath(home)} is not a valid AI Playtime record; restore ${recordPath(home)}.bak or remove it\n`,
     record: "{",
+  });
+});
+
+it("rejects a record holding a day without time", () => {
+  const home = claudeHome();
+  saveRecord(home, at("2025-06-24T00:00:00Z"), { "2025-06-23": 0 });
+  expect(run(home)).toEqual({
+    status: 1,
+    stdout: "",
+    stderr: `ai-playtime: ${recordPath(home)} is not a valid AI Playtime record; restore ${recordPath(home)}.bak or remove it\n`,
   });
 });
 

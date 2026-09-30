@@ -9,14 +9,14 @@ export const MINUTE = 60_000;
 export const DAY = 24 * 60 * MINUTE;
 export const COWORK = "Library/Application Support/Claude/local-agent-mode-sessions";
 
-export const today = Math.floor(Date.now() / DAY) * DAY;
+export const utcToday = () => Math.floor(Date.now() / DAY) * DAY;
 export const dayKey = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export const iso = (ms: number) => new Date(ms).toISOString();
 export const at = (text: string) => Date.parse(text);
 export const events = (times: number[], entrypoint?: string) =>
   times.map((t) => `${JSON.stringify({ timestamp: iso(t), entrypoint })}\n`).join("");
 export const yesterdayAt = (...minutes: number[]) =>
-  events(minutes.map((m) => today - DAY + 10 * 60 * MINUTE + m * MINUTE));
+  events(minutes.map((m) => utcToday() - DAY + 10 * 60 * MINUTE + m * MINUTE));
 export const everyTenMinutes = (from: string, minutes: number) =>
   Array.from({ length: minutes / 10 + 1 }, (_, i) => at(from) + i * 10 * MINUTE);
 export const launches = (numStartups: number, firstStartTime = "2025-06-23T09:00:00.000Z") =>
@@ -115,6 +115,7 @@ export function childEnv(overrides: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 
 export function runWith(overrides: NodeJS.ProcessEnv, ...args: string[]) {
   const result = spawnSync(process.execPath, [CLI, ...args], {
+    cwd: overrides.HOME,
     env: childEnv(overrides),
     encoding: "utf8",
     timeout: 20_000,
@@ -132,23 +133,26 @@ export const firstRunHint = (home: string) => [
 
 export const unestimated = { hoursEstimated: 0, hoursEstimatedRange: null, earlierLaunches: 0 };
 
-export const halfHourYesterday = {
-  hoursOnRecord: 0.5,
-  hoursMeasured: 0.5,
-  hoursEstimated: 0,
-  hoursLastTwoWeeks: 0.5,
-  since: dayKey(today - DAY),
-  apps: [
-    {
-      app: "Claude Code",
-      ...unestimated,
-      hours: 0.5,
-      hoursMeasured: 0.5,
-      hoursLastTwoWeeks: 0.5,
-      secondsByDay: { [dayKey(today - DAY)]: 1800 },
-    },
-  ],
-};
+export function halfHourYesterday() {
+  const yesterday = dayKey(utcToday() - DAY);
+  return {
+    hoursOnRecord: 0.5,
+    hoursMeasured: 0.5,
+    hoursEstimated: 0,
+    hoursLastTwoWeeks: 0.5,
+    since: yesterday,
+    apps: [
+      {
+        app: "Claude Code",
+        ...unestimated,
+        hours: 0.5,
+        hoursMeasured: 0.5,
+        hoursLastTwoWeeks: 0.5,
+        secondsByDay: { [yesterday]: 1800 },
+      },
+    ],
+  };
+}
 
 export const wholeHistory = {
   hoursOnRecord: 72.75,
@@ -169,3 +173,13 @@ export const wholeHistory = {
     },
   ],
 };
+
+export function onOneUtcDay(test: () => void): void {
+  const day = utcToday();
+  try {
+    test();
+  } catch (error) {
+    if (utcToday() === day) throw error;
+    test();
+  }
+}

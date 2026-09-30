@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "ccplaytime",
+      "name": "ai-playtime",
       "devDependencies": {
         "@eslint/js": "10.0.1",
         "@types/estree": "1.0.9",
