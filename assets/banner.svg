@@ -1,84 +1,201 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="t">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="t d">
   <title id="t">AI Playtime</title>
+  <desc id="d">Hours played and tokens burned across Claude Code, Codex, the ChatGPT app and the Claude app, shown as a game library.</desc>
+  <style>
+    .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace; }
+    .drift-a { animation: drift-a 18s ease-in-out infinite alternate; }
+    .drift-b { animation: drift-b 22s ease-in-out infinite alternate; }
+    .drift-c { animation: drift-c 26s ease-in-out infinite alternate; }
+    .rise { transform-box: fill-box; transform-origin: 50% 100%; animation: rise 0.9s cubic-bezier(.2,.8,.2,1) both; }
+    .fill { transform-box: fill-box; transform-origin: 0 50%; animation: fill 1.4s cubic-bezier(.2,.8,.2,1) both; }
+    .toast { animation: toast 0.8s cubic-bezier(.2,.9,.25,1.2) 1.2s both; }
+    .shine { animation: shine 4s ease-in-out 2.2s infinite; }
+    .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 3s ease-in-out infinite; }
+    .blink { animation: blink 1.1s steps(1) infinite; }
+    @keyframes drift-a { to { transform: translate(90px, 40px); } }
+    @keyframes drift-b { to { transform: translate(-80px, 60px); } }
+    @keyframes drift-c { to { transform: translate(60px, -70px); } }
+    @keyframes rise { from { transform: scaleY(0); } }
+    @keyframes fill { from { transform: scaleX(0); } }
+    @keyframes toast { from { opacity: 0; transform: translateY(24px); } }
+    @keyframes shine { 0% { transform: translateX(-120px); } 40%, 100% { transform: translateX(420px); } }
+    @keyframes pulse { 50% { opacity: 0.45; transform: scale(1.12); } }
+    @keyframes blink { 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0d1117"/>
-      <stop offset="1" stop-color="#161b22"/>
-    </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ff8a3d"/>
-      <stop offset="1" stop-color="#ffd166"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.65" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#ff8a3d" stop-opacity="0.14"/>
-      <stop offset="1" stop-color="#ff8a3d" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="fade" cx="0.5" cy="0.5" r="0.6">
-      <stop offset="0" stop-color="#fff"/>
-      <stop offset="1" stop-color="#000"/>
-    </radialGradient>
-    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M40 .5H.5V40" fill="none" stroke="#e6edf3" stroke-opacity="0.05"/>
-    </pattern>
-    <mask id="gridfade">
-      <rect width="1280" height="640" fill="url(#fade)"/>
-    </mask>
-    <filter id="blur" x="-1" y="-1" width="3" height="3">
-      <feGaussianBlur stdDeviation="10"/>
+    <clipPath id="frame"><rect width="1280" height="640" rx="28"/></clipPath>
+    <filter id="aurora" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="70"/></filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0"/>
     </filter>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
-      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#000" flood-opacity="0.55"/>
-    </filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="30" stdDeviation="30" flood-color="#000" flood-opacity="0.6"/></filter>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1.1" fill="#fff" fill-opacity="0.07"/></pattern>
+    <radialGradient id="dotfade" cx="0.3" cy="0.4" r="0.8"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
+    <mask id="dotmask"><rect width="1280" height="640" fill="url(#dotfade)"/></mask>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0.3">
+      <stop offset="0" stop-color="#ffb35c"/>
+      <stop offset="0.5" stop-color="#ff5f8f"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#171a24" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#0d0f16" stop-opacity="0.92"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff7a45"/><stop offset="1" stop-color="#ffc46b"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe29a"/><stop offset="1" stop-color="#f5a524"/></linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="g-code" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffa057"/><stop offset="1" stop-color="#f0533a"/></linearGradient>
+    <linearGradient id="g-codex" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+    <linearGradient id="g-chat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6ee7b7"/><stop offset="1" stop-color="#059669"/></linearGradient>
+    <linearGradient id="g-claude" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#ec4899"/></linearGradient>
+    <clipPath id="toastclip"><rect x="836" y="532" width="344" height="72" rx="18"/></clipPath>
   </defs>
 
-  <rect width="1280" height="640" rx="28" fill="url(#bg)"/>
-  <rect width="1280" height="640" rx="28" fill="url(#glow)"/>
-  <rect width="1280" height="640" rx="28" fill="url(#grid)" mask="url(#gridfade)"/>
-  <rect x="0.5" y="0.5" width="1279" height="639" rx="27.5" fill="none" stroke="#fff" stroke-opacity="0.08"/>
-
-  <path d="M83.25 263.3L109.25 278.2L83.25 293.1Z" fill="#ff8a3d" stroke="#ff8a3d" stroke-width="6.5" stroke-linejoin="round" opacity="0.55" filter="url(#blur)"/>
-  <path d="M83.25 263.3L109.25 278.2L83.25 293.1Z" fill="url(#accent)" stroke="url(#accent)" stroke-width="6.5" stroke-linejoin="round"/>
-  <g font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-    <text x="131" y="296.5" fill="#e6edf3" font-size="52" font-weight="700" letter-spacing="-1.25">AI Playtime</text>
-    <text x="80" y="345.5" fill="#8b949e" font-size="23">Hours played,<tspan x="80" dy="30">across your AI apps.</tspan></text>
+  <g clip-path="url(#frame)">
+    <rect width="1280" height="640" fill="#07080d"/>
+    <g filter="url(#aurora)" opacity="0.9">
+      <circle class="drift-a" cx="230" cy="120" r="210" fill="#ff7a3d" fill-opacity="0.38"/>
+      <circle class="drift-b" cx="760" cy="80" r="230" fill="#ff3d81" fill-opacity="0.26"/>
+      <circle class="drift-c" cx="1120" cy="560" r="260" fill="#7c5cff" fill-opacity="0.34"/>
+      <circle class="drift-a" cx="420" cy="620" r="200" fill="#22d3ee" fill-opacity="0.16"/>
+    </g>
+    <rect width="1280" height="640" fill="url(#dots)" mask="url(#dotmask)"/>
+    <rect width="1280" height="640" filter="url(#grain)"/>
   </g>
+  <rect x="0.5" y="0.5" width="1279" height="639" rx="27.5" fill="none" stroke="#fff" stroke-opacity="0.1"/>
 
-  <rect x="454" y="171" width="746" height="298" rx="14" fill="#0a0d12" filter="url(#shadow)"/>
-  <path d="M454 215V185a14 14 0 0 1 14-14H1186a14 14 0 0 1 14 14V215Z" fill="#12171e"/>
-  <path d="M454 215.5H1200" stroke="#21262d"/>
-  <rect x="454.5" y="171.5" width="745" height="297" rx="13.5" fill="none" stroke="#30363d"/>
-  <g fill="#3a414a">
-    <circle cx="478" cy="193" r="6"/>
-    <circle cx="498" cy="193" r="6"/>
-    <circle cx="518" cy="193" r="6"/>
-  </g>
-
-  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-    <text x="827" y="198.5" fill="#8b949e" font-size="15" text-anchor="middle">~ npx ai-playtime</text>
-    <g font-size="16">
-      <text x="486" y="252" fill="#6e7681">$ npx ai-playtime</text>
-      <text x="505.78" y="312" fill="#e6edf3" font-weight="700">AI Playtime</text>
-      <text x="505.78" y="342" fill="#e6edf3"><tspan fill="#ffd166" font-weight="700">~1,024</tspan> hrs on record</text>
-      <text x="505.78" y="372" fill="#e6edf3" textLength="227.4"><tspan fill="#ffd166" font-weight="700">96.3</tspan> hrs last two weeks</text>
-      <text x="505.78" y="402" fill="#e6edf3">Claude Code ~812<tspan fill="#6e7681"> · </tspan>Codex 104.5<tspan fill="#6e7681"> · </tspan>ChatGPT app 88.2<tspan fill="#6e7681"> · </tspan>Claude app 19.1</text>
-      <text x="505.78" y="432" fill="#6e7681">since 23 Jun 2025 (~731 hrs estimated from 1,187 earlier launches)</text>
+  <g transform="translate(80 104)">
+    <rect class="pulse" width="64" height="64" rx="18" fill="url(#title)" filter="url(#glow)" opacity="0.8"/>
+    <rect width="64" height="64" rx="18" fill="url(#title)"/>
+    <rect x="1" y="1" width="62" height="62" rx="17" fill="none" stroke="#fff" stroke-opacity="0.35"/>
+    <path d="M25 19.5L45 32L25 44.5Z" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+    <g class="mono" font-size="16">
+      <rect x="84" y="13" width="214" height="38" rx="19" fill="#fff" fill-opacity="0.06" stroke="#fff" stroke-opacity="0.12"/>
+      <text x="104" y="37" fill="#8a91a0">$</text>
+      <text x="120" y="37" fill="#e9ecf2">npx ai-playtime</text>
+      <rect class="blink" x="272" y="24" width="9" height="17" rx="1.5" fill="#ffb35c"/>
     </g>
   </g>
-  <path d="M487.1 301L494.4 306.7L487.1 312.4Z" fill="url(#accent)" stroke="url(#accent)" stroke-width="2.3" stroke-linejoin="round"/>
-  <g fill="#ff8a3d" transform="translate(754.46 374.26) scale(0.941)">
-    <rect x="0" y="-5.7" width="7.3" height="5.7" rx="1.6"/>
-    <rect x="10.51" y="-11.7" width="7.3" height="11.7" rx="1.6"/>
-    <rect x="21.02" y="-15.8" width="7.3" height="15.8" rx="1.6"/>
-    <rect x="31.53" y="-17.8" width="7.3" height="17.8" rx="1.6"/>
-    <rect x="42.03" y="-7.7" width="7.3" height="7.7" rx="1.6"/>
-    <circle cx="56.19" cy="-6.9" r="1.6"/>
-    <rect x="63.05" y="-3.6" width="7.3" height="3.6" rx="1.6"/>
-    <rect x="73.56" y="-13.8" width="7.3" height="13.8" rx="1.6"/>
-    <rect x="84.07" y="-17.8" width="7.3" height="17.8" rx="1.6"/>
-    <rect x="94.58" y="-11.7" width="7.3" height="11.7" rx="1.6"/>
-    <rect x="105.09" y="-5.7" width="7.3" height="5.7" rx="1.6"/>
-    <rect x="115.6" y="-3.6" width="7.3" height="3.6" rx="1.6"/>
-    <rect x="126.1" y="-7.7" width="7.3" height="7.7" rx="1.6"/>
-    <rect x="136.61" y="-15.8" width="7.3" height="15.8" rx="1.6"/>
+
+  <g class="sans">
+    <text x="76" y="262" font-size="80" font-weight="800" letter-spacing="-3" fill="#f5f6fa">AI <tspan fill="url(#title)">Playtime</tspan></text>
+    <text x="80" y="314" font-size="26" fill="#a3a9b7">Hours played and tokens burned,<tspan x="80" dy="36">across every AI app you use.</tspan></text>
+
+    <g transform="translate(80 410)">
+      <text font-size="38" font-weight="750" letter-spacing="-1" fill="#f5f6fa">~1,024</text>
+      <text y="28" font-size="15" fill="#8a91a0">hrs on record</text>
+      <text x="150" font-size="38" font-weight="750" letter-spacing="-1" fill="#f5f6fa">4.1B</text>
+      <text x="150" y="28" font-size="15" fill="#8a91a0">tokens burned</text>
+      <text x="272" font-size="38" font-weight="750" letter-spacing="-1" fill="url(#title)">$9,877</text>
+      <text x="272" y="28" font-size="15" fill="#8a91a0">at API prices</text>
+    </g>
+
+    <g transform="translate(80 548)" fill="#8a91a0" font-size="15">
+      <path d="M3 8V5.5a5 5 0 0 1 10 0V8" fill="none" stroke="#8a91a0" stroke-width="1.6"/>
+      <rect x="0.5" y="8" width="15" height="11" rx="2.5"/>
+      <text x="26" y="18">Local only. Reads your logs, nothing leaves your machine.</text>
+    </g>
+  </g>
+
+  <g filter="url(#lift)">
+    <rect x="590" y="88" width="610" height="452" rx="26" fill="url(#panel)"/>
+  </g>
+  <rect x="590.5" y="88.5" width="609" height="451" rx="25.5" fill="none" stroke="url(#edge)"/>
+
+  <g class="sans">
+    <text x="626" y="134" font-size="13" font-weight="700" letter-spacing="2.6" fill="#8a91a0">LIBRARY</text>
+    <text x="1164" y="134" font-size="14" fill="#a3a9b7" text-anchor="end"><tspan font-weight="700" fill="#ffc46b">96.3</tspan> hrs last two weeks</text>
+  </g>
+  <g transform="translate(806 138)" fill="url(#spark)">
+    <rect class="rise" style="animation-delay:0.30s" x="0" y="-7" width="7" height="7" rx="2"/>
+    <rect class="rise" style="animation-delay:0.36s" x="12" y="-17.5" width="7" height="17.5" rx="2"/>
+    <rect class="rise" style="animation-delay:0.42s" x="24" y="-24.5" width="7" height="24.5" rx="2"/>
+    <rect class="rise" style="animation-delay:0.48s" x="36" y="-28" width="7" height="28" rx="2"/>
+    <rect class="rise" style="animation-delay:0.54s" x="48" y="-10.5" width="7" height="10.5" rx="2"/>
+    <circle cx="63.5" cy="-2" r="2" fill="#5d6473"/>
+    <rect class="rise" style="animation-delay:0.66s" x="72" y="-3.5" width="7" height="3.5" rx="2"/>
+    <rect class="rise" style="animation-delay:0.72s" x="84" y="-21" width="7" height="21" rx="2"/>
+    <rect class="rise" style="animation-delay:0.78s" x="96" y="-28" width="7" height="28" rx="2"/>
+    <rect class="rise" style="animation-delay:0.84s" x="108" y="-17.5" width="7" height="17.5" rx="2"/>
+    <rect class="rise" style="animation-delay:0.90s" x="120" y="-7" width="7" height="7" rx="2"/>
+    <rect class="rise" style="animation-delay:0.96s" x="132" y="-3.5" width="7" height="3.5" rx="2"/>
+    <rect class="rise" style="animation-delay:1.02s" x="144" y="-10.5" width="7" height="10.5" rx="2"/>
+    <rect class="rise" style="animation-delay:1.08s" x="156" y="-24.5" width="7" height="24.5" rx="2"/>
+  </g>
+  <path d="M626 182.5H1164" stroke="#fff" stroke-opacity="0.07"/>
+
+  <g class="sans">
+    <g transform="translate(626 204)">
+      <rect width="56" height="56" rx="16" fill="url(#g-code)"/>
+      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
+      <text x="28" y="35" class="mono" font-size="19" font-weight="800" fill="#fff" text-anchor="middle">&gt;_</text>
+      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">Claude Code</text>
+      <text x="76" y="46" font-size="14" fill="#8a91a0">2.95B tokens · $7,012</text>
+      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">~812</text>
+      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
+      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
+      <rect class="fill" style="animation-delay:.4s" x="76" y="62" width="366" height="5" rx="2.5" fill="url(#g-code)"/>
+    </g>
+    <g transform="translate(626 290)">
+      <rect width="56" height="56" rx="16" fill="url(#g-codex)"/>
+      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
+      <text x="28" y="35" class="mono" font-size="18" font-weight="800" fill="#fff" text-anchor="middle">{ }</text>
+      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">Codex</text>
+      <text x="76" y="46" font-size="14" fill="#8a91a0">905M tokens · $2,120</text>
+      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">104.5</text>
+      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
+      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
+      <rect class="fill" style="animation-delay:.55s" x="76" y="62" width="47" height="5" rx="2.5" fill="url(#g-codex)"/>
+    </g>
+    <g transform="translate(626 376)">
+      <rect width="56" height="56" rx="16" fill="url(#g-chat)"/>
+      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
+      <path d="M17 16h22a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6H27l-7 6v-6h-3a6 6 0 0 1-6-6v-9a6 6 0 0 1 6-6Z" fill="#fff"/>
+      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">ChatGPT app</text>
+      <text x="76" y="46" font-size="14" fill="#8a91a0">204M tokens · $661</text>
+      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">88.2</text>
+      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
+      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
+      <rect class="fill" style="animation-delay:.7s" x="76" y="62" width="40" height="5" rx="2.5" fill="url(#g-chat)"/>
+    </g>
+    <g transform="translate(626 462)">
+      <rect width="56" height="56" rx="16" fill="url(#g-claude)"/>
+      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
+      <path d="M28 12C29.6 22 33.6 26 44 28C33.6 30 29.6 34 28 44C26.4 34 22.4 30 12 28C22.4 26 26.4 22 28 12Z" fill="#fff"/>
+      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">Claude app</text>
+      <text x="76" y="46" font-size="14" fill="#8a91a0">44M tokens · $83</text>
+      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">19.1</text>
+      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
+      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
+      <rect class="fill" style="animation-delay:.85s" x="76" y="62" width="9" height="5" rx="2.5" fill="url(#g-claude)"/>
+    </g>
+  </g>
+
+  <g class="toast">
+    <g filter="url(#lift)">
+      <rect x="836" y="532" width="344" height="72" rx="18" fill="#141722"/>
+    </g>
+    <rect x="836.5" y="532.5" width="343" height="71" rx="17.5" fill="none" stroke="url(#gold)" stroke-opacity="0.7"/>
+    <g clip-path="url(#toastclip)">
+      <g transform="skewX(-20)"><rect class="shine" x="1020" y="532" width="90" height="72" fill="url(#sheen)"/></g>
+    </g>
+    <circle cx="874" cy="568" r="20" fill="url(#gold)"/>
+    <g fill="none" stroke="#3b2a05" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M866 559h16v5a8 8 0 0 1-16 0Z" fill="#3b2a05"/>
+      <path d="M866 561h-3a3.5 3.5 0 0 0 4 5.5M882 561h3a3.5 3.5 0 0 1-4 5.5M874 572v4M869 578h10"/>
+    </g>
+    <g class="sans">
+      <text x="908" y="561" font-size="12" font-weight="700" letter-spacing="1.8" fill="#ffd27a">ACHIEVEMENT UNLOCKED</text>
+      <text x="908" y="584" font-size="17" font-weight="650" fill="#f5f6fa">1,000 hours on record</text>
+    </g>
   </g>
 </svg>

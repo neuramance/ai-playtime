@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="AI Playtime: hours played, across your AI apps" width="100%">
+  <img src="assets/banner.svg" alt="AI Playtime: hours played and tokens burned, across your AI apps" width="100%">
 </p>
 
 # AI Playtime
