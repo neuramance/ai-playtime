@@ -1,6 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+export const CHUNK_BYTES = 1 << 20;
+
 export function isMissing(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
@@ -24,6 +26,24 @@ export async function readIfPresent(path: string): Promise<string | undefined> {
     if (isMissing(error)) return undefined;
     throw error;
   }
+}
+
+export async function eachLine(
+  text: AsyncIterable<string>,
+  visit: (line: string) => void,
+): Promise<void> {
+  let rest = "";
+  for await (const chunk of text) {
+    const end = chunk.lastIndexOf("\n");
+    if (end === -1) {
+      rest += chunk;
+      continue;
+    }
+    const head = chunk.slice(0, end);
+    for (const line of (rest === "" ? head : rest + head).split("\n")) visit(line);
+    rest = chunk.slice(end + 1);
+  }
+  if (rest !== "") visit(rest);
 }
 
 export async function jsonlFiles(dir: string, name: RegExp): Promise<string[]> {

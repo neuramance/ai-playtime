@@ -70,6 +70,232 @@ export function claudeHome(): string {
   return home;
 }
 
+export function claudeTokenHome(): string {
+  const home = emptyDir();
+  const opus = {
+    input_tokens: 2500,
+    cache_creation_input_tokens: 110000,
+    cache_creation: { ephemeral_5m_input_tokens: 100000, ephemeral_1h_input_tokens: 10000 },
+    cache_read_input_tokens: 1000000,
+    output_tokens: 7,
+    speed: "standard",
+  };
+  const replies = [
+    { minute: 0, id: "msg_a", model: "claude-opus-5-5", usage: opus },
+    {
+      minute: 10,
+      id: "msg_a",
+      model: "claude-opus-5-5",
+      usage: { ...opus, output_tokens: 50000 },
+    },
+    {
+      minute: 15,
+      id: "msg_b",
+      model: "claude-opus-5-5",
+      usage: {
+        input_tokens: 2500,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 100000,
+        output_tokens: 3,
+      },
+    },
+    {
+      minute: 20,
+      id: "msg_b",
+      model: "claude-opus-5-5",
+      usage: {
+        input_tokens: 2500,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 100000,
+        output_tokens: 10000,
+        speed: "fast",
+      },
+    },
+    {
+      minute: 30,
+      id: "msg_c",
+      model: "claude-haiku-4-5-20251001",
+      content: "before\u2028after",
+      usage: {
+        input_tokens: 10000,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        output_tokens: 20000,
+      },
+    },
+    {
+      minute: 30,
+      id: "msg_s",
+      model: "<synthetic>",
+      usage: {
+        input_tokens: 0,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        output_tokens: 0,
+      },
+    },
+  ];
+  write(
+    home,
+    ".claude/projects/-work/s1.jsonl",
+    replies
+      .map(({ minute, ...message }) =>
+        JSON.stringify({
+          timestamp: iso(at("2025-07-01T10:00:00Z") + minute * MINUTE),
+          type: "assistant",
+          entrypoint: "cli",
+          message,
+        }),
+      )
+      .join("\n"),
+  );
+  write(
+    home,
+    ".claude/projects/-work/s1/subagents/agent-a.jsonl",
+    JSON.stringify({
+      timestamp: "2025-07-01T10:15:00Z",
+      type: "assistant",
+      entrypoint: "cli",
+      message: { id: "msg_a", model: "claude-opus-5-5", usage: opus },
+    }),
+  );
+  return home;
+}
+
+export const claudeTokenDays = {
+  "2025-07-01": {
+    "claude-opus-5-5": {
+      input: 2500,
+      cacheWrite: 100000,
+      cacheWrite1h: 10000,
+      cacheRead: 1000000,
+      output: 50000,
+    },
+    "claude-opus-5-5 (fast)": {
+      input: 2500,
+      cacheWrite: 0,
+      cacheWrite1h: 0,
+      cacheRead: 100000,
+      output: 10000,
+    },
+    "claude-haiku-4-5": {
+      input: 10000,
+      cacheWrite: 0,
+      cacheWrite1h: 0,
+      cacheRead: 0,
+      output: 20000,
+    },
+  },
+};
+
+const codexUsage = {
+  initial: {
+    input_tokens: 5500,
+    cached_input_tokens: 1500,
+    cache_write_input_tokens: 3000,
+    output_tokens: 500,
+    reasoning_output_tokens: 0,
+    total_tokens: 6000,
+  },
+  long: {
+    input_tokens: 300000,
+    cached_input_tokens: 0,
+    cache_write_input_tokens: 0,
+    output_tokens: 2000,
+    total_tokens: 302000,
+  },
+  recorded: {
+    input_tokens: 2000,
+    cached_input_tokens: 1000,
+    cache_write_input_tokens: 0,
+    output_tokens: 100,
+    total_tokens: 2100,
+  },
+};
+
+export function codexTokenHome(): string {
+  const home = emptyDir();
+  const { initial, long, recorded } = codexUsage;
+  const meta = { type: "session_meta", payload: { originator: "codex-tui" } };
+  const context = { type: "turn_context", payload: { model: "gpt-6-astra" } };
+  const count = {
+    type: "event_msg",
+    payload: {
+      type: "token_count",
+      info: { total_token_usage: initial, last_token_usage: initial },
+    },
+  };
+  const response = {
+    type: "token_usage_record",
+    payload: { response_id: "resp-1", usage: recorded },
+  };
+  const lines = [
+    meta,
+    context,
+    { type: "event_msg", payload: { type: "token_count", info: null } },
+    count,
+    count,
+    {
+      type: "event_msg",
+      payload: {
+        type: "token_count",
+        info: {
+          last_token_usage: long,
+          total_token_usage: {
+            ...initial,
+            input_tokens: 305500,
+            output_tokens: 2500,
+            total_tokens: 308000,
+          },
+        },
+      },
+    },
+    response,
+    {
+      type: "event_msg",
+      payload: {
+        type: "token_count",
+        info: {
+          last_token_usage: recorded,
+          total_token_usage: {
+            ...initial,
+            input_tokens: 307500,
+            cached_input_tokens: 2500,
+            output_tokens: 2600,
+            total_tokens: 310100,
+          },
+        },
+      },
+    },
+    { type: "turn_context", payload: { model: "gpt-5.5" } },
+    {
+      type: "token_usage_record",
+      payload: {
+        response_id: "resp-2",
+        usage: {
+          input_tokens: 4000,
+          cached_input_tokens: 0,
+          cache_write_input_tokens: 2000,
+          output_tokens: 1000,
+          total_tokens: 5000,
+        },
+      },
+    },
+  ];
+  for (const [name, entries] of Object.entries({ a: lines, b: [meta, context, response] })) {
+    write(
+      home,
+      `.codex/sessions/rollout-${name}.jsonl`,
+      entries
+        .map((line, i) =>
+          JSON.stringify({ timestamp: iso(at("2025-07-01T10:00:00Z") + i * MINUTE), ...line }),
+        )
+        .join("\n"),
+    );
+  }
+  return home;
+}
+
 export function writeSession(
   claude: string,
   name: string,
@@ -132,6 +358,21 @@ export const firstRunHint = (home: string) => [
 ];
 
 export const unestimated = { hoursEstimated: 0, hoursEstimatedRange: null, earlierLaunches: 0 };
+export const noTokens = {
+  tokens: 0,
+  usd: 0,
+  tokensLastTwoWeeks: 0,
+  usdLastTwoWeeks: 0,
+  usageByDay: {},
+};
+export const noSpend = {
+  tokensOnRecord: 0,
+  usdOnRecord: 0,
+  tokensLastTwoWeeks: 0,
+  usdLastTwoWeeks: 0,
+  tokensSince: null,
+  unpricedModels: [],
+};
 
 export function halfHourYesterday() {
   const yesterday = dayKey(utcToday() - DAY);
@@ -141,6 +382,7 @@ export function halfHourYesterday() {
     hoursEstimated: 0,
     hoursLastTwoWeeks: 0.5,
     since: yesterday,
+    ...noSpend,
     apps: [
       {
         app: "Claude Code",
@@ -149,6 +391,7 @@ export function halfHourYesterday() {
         hoursMeasured: 0.5,
         hoursLastTwoWeeks: 0.5,
         secondsByDay: { [yesterday]: 1800 },
+        ...noTokens,
       },
     ],
   };
@@ -160,6 +403,7 @@ export const wholeHistory = {
   hoursEstimated: 63.25,
   hoursLastTwoWeeks: 0,
   since: "2025-06-23",
+  ...noSpend,
   apps: [
     {
       app: "Claude Code",
@@ -170,6 +414,7 @@ export const wholeHistory = {
       earlierLaunches: 100,
       hoursLastTwoWeeks: 0,
       secondsByDay: { "2025-07-01": 34_200 },
+      ...noTokens,
     },
   ],
 };

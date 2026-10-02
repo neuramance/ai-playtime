@@ -22,6 +22,7 @@ import {
   CALIBRATION_SESSIONS,
   calibrate,
   countEarlier,
+  firstRecentDay,
   IDLE_LIMIT_MS,
   mergeRecord,
   midpoint,
@@ -33,6 +34,7 @@ import {
   type SecondsByDay,
   type Summary,
 } from "./playtime.ts";
+import { mergeUsage, spendOf, type Spend, type UsageByDay } from "./tokens.ts";
 
 const USAGE = `Usage: ai-playtime [--json]
 
@@ -49,6 +51,12 @@ Claude Code time before your oldest transcript is estimated from its count of te
 launches, once ${String(CALIBRATION_SESSIONS)} terminal sessions are on disk: between your typical
 (median) and average session. --json shows the range.
 
+Tokens are what each saved model response reports, cache reads and writes included. Spend
+prices them at the first-party API list prices built into this version: what the same usage
+would cost on the API, not what a subscription bills. Both are floors: Claude Code leaves
+some background requests, such as web searches, out of its transcripts, and Codex logs don't
+say which requests ran on the pricier Fast tier, so Codex is priced at standard rates.
+
 Options:
   --json         print machine-readable output
   -h, --help     show this help
@@ -62,6 +70,13 @@ const LABELS: Record<App, string> = {
 };
 const Count = z.int().check(z.nonnegative());
 const Seconds = z.int().check(z.positive());
+const Tokens = z.object({
+  input: Count,
+  cacheWrite: Count,
+  cacheWrite1h: Count,
+  cacheRead: Count,
+  output: Count,
+});
 const RecordFile = z.object({
   version: z.literal(1),
   scannedAt: z.iso.datetime(),
@@ -73,6 +88,9 @@ const RecordFile = z.object({
       bounds: z.nullable(z.object({ lowSeconds: Count, highSeconds: Count })),
     }),
   ),
+  tokens: z.optional(
+    z.partialRecord(z.enum(APPS), z.record(z.iso.date(), z.record(z.string(), Tokens))),
+  ),
 });
 const NO_ACTIVITY_JSON = {
   hoursOnRecord: 0,
@@ -80,15 +98,26 @@ const NO_ACTIVITY_JSON = {
   hoursEstimated: 0,
   hoursLastTwoWeeks: 0,
   since: null,
+  tokensOnRecord: 0,
+  usdOnRecord: 0,
+  tokensLastTwoWeeks: 0,
+  usdLastTwoWeeks: 0,
+  tokensSince: null,
+  unpricedModels: [],
   apps: [],
 };
 const BARS = "▁▂▃▄▅▆▇█";
+const COMPACT = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+const DOLLARS = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const MONTHS = "JanFebMarAprMayJunJulAugSepOctNovDec";
+
+type TokensByApp = Partial<Record<App, UsageByDay>>;
 
 interface SavedRecord {
   scannedAt: number;
   apps: Days;
   earlier: Earlier | null;
+  tokens: TokensByApp | undefined;
 }
 
 interface AppTime {
@@ -96,12 +125,16 @@ interface AppTime {
   days: SecondsByDay;
   summary: Summary;
   earlier: Earlier | null;
+  usage: UsageByDay;
+  spend: Spend;
+  recentSpend: Spend;
 }
 
 interface Tracked {
   apps: AppTime[];
   total: Summary;
   earlier: Earlier | null;
+  spend: Spend;
   newRecordPath: string | undefined;
 }
 
@@ -128,8 +161,8 @@ async function loadRecord(path: string): Promise<SavedRecord | undefined> {
   if (!parsed.success) {
     throw new Error(`${path} is not a valid AI Playtime record; restore ${path}.bak or remove it`);
   }
-  const { scannedAt, apps, earlier } = parsed.data;
-  return { scannedAt: Date.parse(scannedAt), apps, earlier };
+  const { scannedAt, apps, earlier, tokens } = parsed.data;
+  return { scannedAt: Date.parse(scannedAt), apps, earlier, tokens };
 }
 
 async function backUp(path: string): Promise<void> {
@@ -188,24 +221,36 @@ async function estimate(
   return { ...earlier, bounds: calibrate(earlier.launches, calibration) };
 }
 
+function mergeScan(
+  saved: SavedRecord | undefined,
+  times: Record<App, number[]>,
+  usage: Record<App, UsageByDay>,
+) {
+  const days: Days = {};
+  const tokens: TokensByApp = {};
+  for (const app of APPS) {
+    const merged = mergeRecord(saved?.apps[app] ?? {}, activeSecondsByDay(times[app]));
+    if (Object.keys(merged).length > 0) days[app] = merged;
+    const appTokens = mergeUsage(saved?.tokens?.[app] ?? {}, usage[app]);
+    if (Object.keys(appTokens).length > 0) tokens[app] = appTokens;
+  }
+  return { days, tokens };
+}
+
 async function scan(paths: Paths, saved: SavedRecord | undefined, now: number) {
-  const since = rescanFrom(saved?.scannedAt, now);
-  const [sessions, codex] = await Promise.all([
+  const since = saved?.tokens === undefined ? 0 : rescanFrom(saved.scannedAt, now);
+  const [claude, codex] = await Promise.all([
     scanSessions(paths.claude, isCalibrating(saved) ? 0 : since),
     scanCodex(paths.codex, since),
   ]);
-  const scanned: Record<App, number[]> = {
-    "claude-code": sessions.flatMap((session) => session.timestamps["claude-code"]),
-    codex: codex.codex,
-    chatgpt: codex.chatgpt,
-    claude: sessions.flatMap((session) => session.timestamps.claude),
+  const times: Record<App, number[]> = {
+    "claude-code": claude.sessions.flatMap((session) => session.timestamps["claude-code"]),
+    codex: codex.times.codex,
+    chatgpt: codex.times.chatgpt,
+    claude: claude.sessions.flatMap((session) => session.timestamps.claude),
   };
-  const days: Days = {};
-  for (const app of APPS) {
-    const merged = mergeRecord(saved?.apps[app] ?? {}, activeSecondsByDay(scanned[app]));
-    if (Object.keys(merged).length > 0) days[app] = merged;
-  }
-  return { sessions, days };
+  const merged = mergeScan(saved, times, { ...claude.usage, ...codex.usage });
+  return { sessions: claude.sessions, ...merged };
 }
 
 function estimatedSeconds(earlier: Earlier | null): number {
@@ -216,25 +261,42 @@ function secondsOf(time: AppTime): number {
   return time.summary.secondsMeasured + estimatedSeconds(time.earlier);
 }
 
+function activeDays(days: SecondsByDay | undefined, usage: UsageByDay | undefined): SecondsByDay {
+  const tokenDays = Object.keys(usage ?? {}).map((day): [string, number] => [day, 0]);
+  return { ...Object.fromEntries(tokenDays), ...days };
+}
+
 async function track(paths: Paths, now: number): Promise<Tracked | undefined> {
   const saved = await loadRecord(paths.record);
-  const { sessions, days } = await scan(paths, saved, now);
-  const total = summarize(addDays(Object.values(days)), now);
+  const { sessions, days, tokens } = await scan(paths, saved, now);
+  const activity = (app: App) => activeDays(days[app], tokens[app]);
+  const total = summarize(addDays(APPS.map(activity)), now);
   if (total === undefined) return undefined;
   const claudeCode = summarize(days["claude-code"] ?? {}, now);
   let earlier = saved?.earlier ?? null;
   if (isCalibrating(saved) && claudeCode !== undefined) {
     earlier = await estimate(paths.claude, sessions, claudeCode, saved);
   }
-  await saveRecord(paths.record, { scannedAt: now, apps: days, earlier });
+  await saveRecord(paths.record, { scannedAt: now, apps: days, earlier, tokens });
   const apps = APPS.flatMap((app) => {
-    const appDays = days[app];
-    const summary = appDays && summarize(appDays, now);
-    if (appDays === undefined || summary === undefined) return [];
-    return [{ app, days: appDays, summary, earlier: app === "claude-code" ? earlier : null }];
+    const summary = summarize(activity(app), now);
+    if (summary === undefined) return [];
+    const usage = tokens[app] ?? {};
+    return [
+      {
+        app,
+        days: days[app] ?? {},
+        summary,
+        earlier: app === "claude-code" ? earlier : null,
+        usage,
+        spend: spendOf([usage]),
+        recentSpend: spendOf([usage], firstRecentDay(now)),
+      },
+    ];
   }).sort((a, b) => secondsOf(b) - secondsOf(a));
+  const spend = spendOf(apps.map((time) => time.usage));
   const newRecordPath = saved === undefined ? paths.record : undefined;
-  return { apps, total, earlier, newRecordPath };
+  return { apps, total, earlier, spend, newRecordPath };
 }
 
 function hours(seconds: number): string {
@@ -281,8 +343,18 @@ function sinceLine(total: Summary, earlier: Earlier | null): string {
     : `${date} (~${wholeHours(midpoint(earlier.bounds))} hrs estimated from ${launches})`;
 }
 
-function render({ apps, total, earlier, newRecordPath }: Tracked): string {
-  const accent = (text: string) => styleText(["bold", "yellow"], text);
+function accent(text: string): string {
+  return styleText(["bold", "yellow"], text);
+}
+
+function spendLine({ tokens, usd, unpricedTokens }: Spend): string[] {
+  if (tokens === 0) return [];
+  const unpriced = unpricedTokens === 0 ? "" : ` (${COMPACT.format(unpricedTokens)} unpriced)`;
+  const worth = `worth ${accent(DOLLARS.format(usd))} at API prices`;
+  return [`    ${accent(COMPACT.format(tokens))} tokens on record, ${worth}${unpriced}`];
+}
+
+function render({ apps, total, earlier, spend, newRecordPath }: Tracked): string {
   const breakdown = apps
     .map(
       (time) =>
@@ -296,6 +368,7 @@ function render({ apps, total, earlier, newRecordPath }: Tracked): string {
     `    ${accent(hours(total.secondsLastTwoWeeks))} hrs last two weeks  ${styleText("yellow", sparkline(total.lastTwoWeeks))}`,
     `    ${breakdown}`,
     styleText("dim", `    ${sinceLine(total, earlier)}`),
+    ...spendLine(spend),
     "",
   ];
   if (newRecordPath !== undefined) {
@@ -314,7 +387,11 @@ function toHours(seconds: number): number {
   return Math.round(seconds / 36) / 100;
 }
 
-function appJson({ app, days, summary, earlier }: AppTime) {
+function toCents(usd: number): number {
+  return Math.round(usd * 100) / 100;
+}
+
+function appJson({ app, days, summary, earlier, usage, spend, recentSpend }: AppTime) {
   const measured = toHours(summary.secondsMeasured);
   const estimated = toHours(estimatedSeconds(earlier));
   const bounds = earlier?.bounds ?? null;
@@ -328,12 +405,27 @@ function appJson({ app, days, summary, earlier }: AppTime) {
     earlierLaunches: earlier?.launches ?? 0,
     hoursLastTwoWeeks: toHours(summary.secondsLastTwoWeeks),
     secondsByDay: days,
+    tokens: spend.tokens,
+    usd: toCents(spend.usd),
+    tokensLastTwoWeeks: recentSpend.tokens,
+    usdLastTwoWeeks: toCents(recentSpend.usd),
+    usageByDay: usage,
   };
 }
 
+type SummedField =
+  | "hours"
+  | "hoursMeasured"
+  | "hoursEstimated"
+  | "hoursLastTwoWeeks"
+  | "tokens"
+  | "usd"
+  | "tokensLastTwoWeeks"
+  | "usdLastTwoWeeks";
+
 function toJson(tracked: Tracked): string {
   const apps = tracked.apps.map(appJson);
-  const addUp = (field: "hours" | "hoursMeasured" | "hoursEstimated" | "hoursLastTwoWeeks") =>
+  const addUp = (field: SummedField) =>
     Math.round(apps.reduce((sum, app) => sum + app[field], 0) * 100) / 100;
   const json = {
     hoursOnRecord: addUp("hours"),
@@ -341,6 +433,12 @@ function toJson(tracked: Tracked): string {
     hoursEstimated: addUp("hoursEstimated"),
     hoursLastTwoWeeks: addUp("hoursLastTwoWeeks"),
     since: sinceDay(tracked.total, tracked.earlier),
+    tokensOnRecord: addUp("tokens"),
+    usdOnRecord: addUp("usd"),
+    tokensLastTwoWeeks: addUp("tokensLastTwoWeeks"),
+    usdLastTwoWeeks: addUp("usdLastTwoWeeks"),
+    tokensSince: tracked.spend.since ?? null,
+    unpricedModels: [...tracked.spend.unpricedModels].sort(),
     apps,
   };
   return `${JSON.stringify(json)}\n`;

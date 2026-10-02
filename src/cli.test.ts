@@ -18,6 +18,7 @@ import {
   everyTenMinutes,
   firstRunHint,
   halfHourYesterday,
+  iso,
   json,
   onOneUtcDay,
   recordPath,
@@ -133,6 +134,33 @@ it("splits a session continued from the terminal into the desktop app", () => {
         { app: "Claude app", secondsByDay: { [dayKey(today)]: 600 } },
       ],
     });
+  });
+});
+
+it("reads log lines that contain Unicode line separators", () => {
+  const home = emptyDir();
+  const [start, middle, end] = everyTenMinutes("2025-07-01T10:00:00Z", 20);
+  const separated = { timestamp: iso(middle ?? 0), note: "a\u2028b\u2029c" };
+  write(
+    home,
+    ".claude/projects/-work/s1.jsonl",
+    `${events([start ?? 0])}${JSON.stringify(separated)}\n${events([end ?? 0])}`,
+  );
+  const meta = {
+    timestamp: iso(start ?? 0),
+    type: "session_meta",
+    payload: { originator: "Codex Desktop", cwd: "/work\u2028space" },
+  };
+  write(
+    home,
+    ".codex/sessions/rollout-a.jsonl",
+    `${JSON.stringify(meta)}\n${events([middle ?? 0, end ?? 0])}`,
+  );
+  expect(json(home)).toMatchObject({
+    apps: [
+      { app: "Claude Code", secondsByDay: { "2025-07-01": 1200 } },
+      { app: "ChatGPT app", secondsByDay: { "2025-07-01": 1200 } },
+    ],
   });
 });
 
@@ -320,7 +348,7 @@ it("reports no activity without writing a record", () => {
     json: {
       status: 0,
       stdout:
-        '{"hoursOnRecord":0,"hoursMeasured":0,"hoursEstimated":0,"hoursLastTwoWeeks":0,"since":null,"apps":[]}\n',
+        '{"hoursOnRecord":0,"hoursMeasured":0,"hoursEstimated":0,"hoursLastTwoWeeks":0,"since":null,"tokensOnRecord":0,"usdOnRecord":0,"tokensLastTwoWeeks":0,"usdLastTwoWeeks":0,"tokensSince":null,"unpricedModels":[],"apps":[]}\n',
       stderr: "",
     },
     saved: false,

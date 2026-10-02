@@ -40,7 +40,7 @@ interface Calibration {
   wallSeconds: number;
 }
 
-function dayOf(ms: number): string {
+export function dayOf(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
@@ -55,6 +55,10 @@ function median(values: readonly number[]): number {
   const half = Math.floor(sorted.length / 2);
   const middle = sorted.subarray(half - 1 + (sorted.length % 2), half + 1);
   return sum(middle) / middle.length;
+}
+
+export function firstRecentDay(now: number): string {
+  return dayOf(now - (RECENT_DAYS - 1) * DAY_MS);
 }
 
 export function activeSecondsByDay(timestamps: readonly number[]): SecondsByDay {
