@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="t d">
   <title id="t">AI Playtime</title>
-  <desc id="d">Hours played and tokens burned across Claude Code, Codex, the ChatGPT app and the Claude app.</desc>
+  <desc id="d">A sample AI Playtime record: about 1,024 hours on record, 4.1 billion tokens burned worth $9,877 at API prices, hours by app for Claude Code, Codex, the ChatGPT app and the Claude app, and the last 14 days of play.</desc>
   <defs>
     <filter id="water" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.0032 0.008" numOctaves="5" seed="11"/>
@@ -60,40 +60,30 @@
     <linearGradient id="light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="1" stop-color="#000" stop-opacity="0.06"/></linearGradient>
   </defs>
   <rect width="1280" height="640" fill="#e7e6e2"/>
-  <svg x="40" y="64" width="620" height="340"><g transform="rotate(-20 310 170)"><rect x="-300" y="-300" width="1220" height="940" filter="url(#water)"/></g></svg>
-  <svg x="676" y="64" width="230" height="340"><rect x="-80" y="-80" width="390" height="500" filter="url(#clay)"/></svg>
+  <svg x="40" y="64" width="620" height="300"><g transform="rotate(-20 310 150)"><rect x="-300" y="-320" width="1220" height="940" filter="url(#water)"/></g></svg>
+  <svg x="676" y="64" width="230" height="300"><rect x="-80" y="-80" width="390" height="460" filter="url(#clay)"/></svg>
   <g font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" fill="#1d1d1f">
-    <g font-size="12" letter-spacing="0.4">
-      <text x="40" y="40">HOURS</text><text x="352" y="40">/</text><text x="520" y="40">01</text><text x="676" y="40">TOKENS</text><text x="1240" y="40" text-anchor="end">AI PLAYTIME</text>
+    <g font-size="13" letter-spacing="1.2">
+      <text x="40" y="40">AI PLAYTIME</text><text x="358" y="40">HOURS PLAYED, TOKENS BURNED</text><text x="676" y="40">SAMPLE RECORD</text><text x="1240" y="40" text-anchor="end">LOCAL ONLY</text>
     </g>
-    <g font-size="9.5" letter-spacing="0.3" fill="#f1f0ec">
-      <text x="50" y="396">HRS</text><text x="232" y="396">/</text><text x="352" y="396">01</text><text x="650" y="396" text-anchor="end">~1,024</text>
-      <text x="686" y="396" fill="#1d1d1f">TOK</text><text x="896" y="396" text-anchor="end" fill="#1d1d1f">4.1B</text>
+    <rect x="40.0" y="378" width="683.8" height="8" fill="#e3552d"/><rect x="726.8" y="378" width="85.4" height="8" fill="#3b3bd9"/><rect x="815.2" y="378" width="71.6" height="8" fill="#1c1c1f"/><rect x="889.8" y="378" width="13.2" height="8" fill="#b68cf0"/>
+    <text x="40" y="410" font-size="12" letter-spacing="1.2" fill="#6d6b67">SHARE OF HOURS BY APP</text>
+    <text x="40" y="482" font-family="Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', Georgia, serif" font-size="58" fill="#1d1d1f"><tspan font-size="40">~</tspan>1,024</text><text x="42" y="508" font-size="13" letter-spacing="1.2" fill="#6d6b67">HOURS ON RECORD</text><text x="358" y="482" font-family="Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', Georgia, serif" font-size="58" fill="#1d1d1f">4.1B</text><text x="360" y="508" font-size="13" letter-spacing="1.2" fill="#6d6b67">TOKENS BURNED</text><text x="676" y="482" font-family="Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', Georgia, serif" font-size="58" fill="#1d1d1f">$9,877</text><text x="678" y="508" font-size="13" letter-spacing="1.2" fill="#6d6b67">AT API PRICES</text>
+    <g font-size="12" letter-spacing="1.2" fill="#6d6b67">
+      <text x="930" y="76">BY APP</text><text x="1240" y="76" text-anchor="end">HOURS</text>
+      <text x="930" y="270">LAST 14 DAYS</text><text x="1240" y="270" text-anchor="end">96.3 HOURS</text>
+      <text x="930" y="386">2 WEEKS AGO</text><text x="1240" y="386" text-anchor="end">TODAY</text>
+      <text x="1240" y="574" text-anchor="end">RUN IT</text>
     </g>
-    <rect x="40" y="418" width="30" height="4" fill="#8f8cf0"/><rect x="70" y="418" width="30" height="4" fill="#3b3bd9"/><rect x="100" y="418" width="30" height="4" fill="#1c1c1f"/><rect x="130" y="418" width="30" height="4" fill="#f1f0ec"/><rect x="160" y="418" width="30" height="4" fill="#55555c"/><rect x="190" y="418" width="30" height="4" fill="#5250e3"/><rect x="220" y="418" width="30" height="4" fill="#5a5a63"/><rect x="250" y="418" width="30" height="4" fill="#3b3bd9"/>
-    <rect x="786" y="418" width="20" height="4" fill="#b68cf0"/><rect x="806" y="418" width="20" height="4" fill="#ea8a2e"/><rect x="826" y="418" width="20" height="4" fill="#f1f0ec"/><rect x="846" y="418" width="20" height="4" fill="#eeaa3e"/><rect x="866" y="418" width="20" height="4" fill="#e3552d"/><rect x="886" y="418" width="20" height="4" fill="#b68cf0"/>
-    <text x="660" y="424" font-size="10.5" text-anchor="end">Hours played, across your AI apps.</text>
-    <text x="40" y="472" font-family="Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', Georgia, serif" font-size="30" letter-spacing="18">PLAY</text>
-    <g font-size="10.5" letter-spacing="0.3"><text x="250" y="468">~1,024 HRS</text><text x="350" y="468">-/-</text><text x="420" y="468">4.1B TOK</text></g>
-    <text x="678" y="472" font-family="Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', Georgia, serif" font-size="30" letter-spacing="18" text-anchor="end">TIME</text>
-    <g font-size="10.5" text-anchor="end">
-      <text x="1240" y="84">Steam-style hours played across</text>
-      <text x="1240" y="98">Claude Code, Codex, the ChatGPT app</text>
-      <text x="1240" y="112">and the Claude app.</text>
-    </g>
-    <g font-size="10" letter-spacing="0.5"><rect x="930" y="164" width="8" height="8" fill="#e3552d"/><text x="946" y="172">CLAUDE CODE</text><text x="1240" y="172" text-anchor="end">~812</text><path d="M930 181.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/><rect x="930" y="190" width="8" height="8" fill="#3b3bd9"/><text x="946" y="198">CODEX</text><text x="1240" y="198" text-anchor="end">104.5</text><path d="M930 207.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/><rect x="930" y="216" width="8" height="8" fill="#1c1c1f"/><text x="946" y="224">CHATGPT APP</text><text x="1240" y="224" text-anchor="end">88.2</text><path d="M930 233.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/><rect x="930" y="242" width="8" height="8" fill="#b68cf0"/><text x="946" y="250">CLAUDE APP</text><text x="1240" y="250" text-anchor="end">19.1</text><path d="M930 259.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/></g>
-    <rect x="930" y="300" width="3.2" height="34" fill="#1d1d1f"/><rect x="952" y="300" width="8.0" height="34" fill="#1d1d1f"/><rect x="974" y="300" width="11.2" height="34" fill="#1d1d1f"/><rect x="996" y="300" width="12.8" height="34" fill="#1d1d1f"/><rect x="1018" y="300" width="4.8" height="34" fill="#1d1d1f"/><rect x="1040" y="300" width="0.8" height="34" fill="#1d1d1f"/><rect x="1062" y="300" width="1.6" height="34" fill="#1d1d1f"/><rect x="1084" y="300" width="9.6" height="34" fill="#1d1d1f"/><rect x="1106" y="300" width="12.8" height="34" fill="#1d1d1f"/><rect x="1128" y="300" width="8.0" height="34" fill="#1d1d1f"/><rect x="1150" y="300" width="3.2" height="34" fill="#1d1d1f"/><rect x="1172" y="300" width="1.6" height="34" fill="#1d1d1f"/><rect x="1194" y="300" width="4.8" height="34" fill="#1d1d1f"/><rect x="1216" y="300" width="11.2" height="34" fill="#1d1d1f"/>
-    <g stroke="#1d1d1f"><path d="M930 352.5H1240"/><path d="M930.5 352v6"/><path d="M952.5 352v3.5"/><path d="M974.5 352v3.5"/><path d="M996.5 352v3.5"/><path d="M1018.5 352v3.5"/><path d="M1040.5 352v3.5"/><path d="M1062.5 352v3.5"/><path d="M1084.5 352v6"/><path d="M1106.5 352v3.5"/><path d="M1128.5 352v3.5"/><path d="M1150.5 352v3.5"/><path d="M1172.5 352v3.5"/><path d="M1194.5 352v3.5"/><path d="M1216.5 352v3.5"/><path d="M1238.5 352v6"/></g>
-    <g font-size="9.5" letter-spacing="0.4"><text x="930" y="374">14 DAYS</text><text x="1240" y="374" text-anchor="end">96.3 HRS</text></g>
-    <g font-size="12" letter-spacing="0.4"><text x="930" y="438">/</text><text x="930" y="506">01</text></g>
-    <g font-size="10.5" text-anchor="end">
-      <text x="1240" y="540">Tokens priced at API list prices.</text>
-      <text x="1240" y="554">Local only. Nothing leaves your machine.</text>
-      <text x="1240" y="600" fill="#3730a3">npx ai-playtime</text>
-    </g>
-    <text x="664" y="600" font-size="76" letter-spacing="-2.5" fill="#3a3938" text-anchor="end">AI Playtime</text>
+    <path d="M930 86.5H1240" stroke="#1d1d1f" stroke-opacity="0.5"/>
+    <g font-size="17"><rect x="930" y="101" width="11" height="11" fill="#e3552d"/><text x="952" y="112">Claude Code</text><text x="1240" y="112" text-anchor="end">~812</text><path d="M930 124.5H1240" stroke="#1d1d1f" stroke-opacity="0.16"/><rect x="930" y="135" width="11" height="11" fill="#3b3bd9"/><text x="952" y="146">Codex</text><text x="1240" y="146" text-anchor="end">104.5</text><path d="M930 158.5H1240" stroke="#1d1d1f" stroke-opacity="0.16"/><rect x="930" y="169" width="11" height="11" fill="#1c1c1f"/><text x="952" y="180">ChatGPT app</text><text x="1240" y="180" text-anchor="end">88.2</text><path d="M930 192.5H1240" stroke="#1d1d1f" stroke-opacity="0.16"/><rect x="930" y="203" width="11" height="11" fill="#b68cf0"/><text x="952" y="214">Claude app</text><text x="1240" y="214" text-anchor="end">19.1</text><path d="M930 226.5H1240" stroke="#1d1d1f" stroke-opacity="0.16"/></g>
+    <path d="M930 280.5H1240" stroke="#1d1d1f" stroke-opacity="0.5"/>
+    <rect x="930.0" y="344" width="14" height="20" fill="#1d1d1f"/><rect x="952.3" y="314" width="14" height="50" fill="#1d1d1f"/><rect x="974.6" y="294" width="14" height="70" fill="#1d1d1f"/><rect x="996.9" y="284" width="14" height="80" fill="#1d1d1f"/><rect x="1019.2" y="334" width="14" height="30" fill="#1d1d1f"/><rect x="1041.5" y="362" width="14" height="2" fill="#1d1d1f" fill-opacity="0.35"/><rect x="1063.8" y="354" width="14" height="10" fill="#1d1d1f"/><rect x="1086.1" y="304" width="14" height="60" fill="#1d1d1f"/><rect x="1108.4" y="284" width="14" height="80" fill="#1d1d1f"/><rect x="1130.7" y="314" width="14" height="50" fill="#1d1d1f"/><rect x="1153.0" y="344" width="14" height="20" fill="#1d1d1f"/><rect x="1175.3" y="354" width="14" height="10" fill="#1d1d1f"/><rect x="1197.6" y="334" width="14" height="30" fill="#1d1d1f"/><rect x="1219.9" y="294" width="14" height="70" fill="#e3552d"/>
+    <path d="M930 364.5H1240" stroke="#1d1d1f"/>
+    <text x="1240" y="604" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20" text-anchor="end" fill="#3730a3">npx ai-playtime</text>
+    <text x="906" y="604" font-size="76" letter-spacing="-2.5" fill="#3a3938" text-anchor="end">AI Playtime</text>
   </g>
-  <g transform="translate(100 546) scale(0.92)" fill="#4f4945"><path d="M-44.4 -28.7Q-44.4 -29.4 -43.9 -32.8Q-43.5 -36.1 -42.4 -39.5Q-41.3 -42.9 -39.4 -45.9Q-37.5 -48.9 -34.8 -51.2Q-32.1 -53.5 -28.8 -54.7Q-25.5 -55.9 -22.0 -56.0Q-18.4 -56.1 -16.8 -55.7Q-15.2 -55.4 -21.0 -39.3Q-26.9 -23.3 -35.7 -25.7Q-44.4 -28.1 -44.4 -28.7Z"/>
+  <g transform="translate(92 566) scale(0.68)" fill="#4f4945"><path d="M-44.4 -28.7Q-44.4 -29.4 -43.9 -32.8Q-43.5 -36.1 -42.4 -39.5Q-41.3 -42.9 -39.4 -45.9Q-37.5 -48.9 -34.8 -51.2Q-32.1 -53.5 -28.8 -54.7Q-25.5 -55.9 -22.0 -56.0Q-18.4 -56.1 -16.8 -55.7Q-15.2 -55.4 -21.0 -39.3Q-26.9 -23.3 -35.7 -25.7Q-44.4 -28.1 -44.4 -28.7Z"/>
 <path d="M-16.7 -13.1Q-16.8 -13.6 -4.8 -19.0Q7.2 -24.5 9.0 -23.1Q10.8 -21.7 11.9 -12.4Q12.9 -3.1 9.0 0.3Q5.2 3.7 -5.7 -4.4Q-16.6 -12.6 -16.7 -13.1Z"/>
 <path d="M-0.6 52.3Q-1.9 53.0 -5.0 54.3Q-8.2 55.5 -11.6 56.3Q-15.0 57.0 -18.6 56.9Q-22.1 56.8 -23.0 56.5Q-23.9 56.1 -20.7 43.9Q-17.6 31.8 -11.5 31.7Q-5.4 31.7 -2.3 41.6Q0.8 51.5 -0.6 52.3Z"/>
 <path d="M-30.4 53.1Q-32.8 52.3 -35.4 50.1Q-38.1 47.8 -39.9 44.9Q-41.8 41.9 -42.8 38.6Q-43.9 35.3 -44.3 32.0Q-44.8 28.7 -44.9 26.2Q-45.0 23.8 -38.5 22.6Q-32.0 21.5 -26.9 25.7Q-21.8 29.9 -24.9 41.9Q-28.0 54.0 -30.4 53.1Z"/>
