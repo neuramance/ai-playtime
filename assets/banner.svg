@@ -1,201 +1,113 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="t d">
   <title id="t">AI Playtime</title>
-  <desc id="d">Hours played and tokens burned across Claude Code, Codex, the ChatGPT app and the Claude app, shown as a game library.</desc>
-  <style>
-    .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    .mono { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace; }
-    .drift-a { animation: drift-a 18s ease-in-out infinite alternate; }
-    .drift-b { animation: drift-b 22s ease-in-out infinite alternate; }
-    .drift-c { animation: drift-c 26s ease-in-out infinite alternate; }
-    .rise { transform-box: fill-box; transform-origin: 50% 100%; animation: rise 0.9s cubic-bezier(.2,.8,.2,1) both; }
-    .fill { transform-box: fill-box; transform-origin: 0 50%; animation: fill 1.4s cubic-bezier(.2,.8,.2,1) both; }
-    .toast { animation: toast 0.8s cubic-bezier(.2,.9,.25,1.2) 1.2s both; }
-    .shine { animation: shine 4s ease-in-out 2.2s infinite; }
-    .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 3s ease-in-out infinite; }
-    .blink { animation: blink 1.1s steps(1) infinite; }
-    @keyframes drift-a { to { transform: translate(90px, 40px); } }
-    @keyframes drift-b { to { transform: translate(-80px, 60px); } }
-    @keyframes drift-c { to { transform: translate(60px, -70px); } }
-    @keyframes rise { from { transform: scaleY(0); } }
-    @keyframes fill { from { transform: scaleX(0); } }
-    @keyframes toast { from { opacity: 0; transform: translateY(24px); } }
-    @keyframes shine { 0% { transform: translateX(-120px); } 40%, 100% { transform: translateX(420px); } }
-    @keyframes pulse { 50% { opacity: 0.45; transform: scale(1.12); } }
-    @keyframes blink { 50% { opacity: 0; } }
-    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
-  </style>
+  <desc id="d">Hours played and tokens burned across Claude Code, Codex, the ChatGPT app and the Claude app.</desc>
   <defs>
-    <clipPath id="frame"><rect width="1280" height="640" rx="28"/></clipPath>
-    <filter id="aurora" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="70"/></filter>
-    <filter id="grain">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
-      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0"/>
+    <filter id="water" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.0032 0.008" numOctaves="5" seed="11"/>
+      <feColorMatrix values="1.9 0 0 0 -0.45  1.9 0 0 0 -0.45  1.9 0 0 0 -0.45  0 0 0 0 1" result="shape"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="5"/>
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" result="flow"/>
+      <feDisplacementMap in="shape" in2="flow" scale="70" xChannelSelector="R" yChannelSelector="G" result="warped"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.06 0.3" numOctaves="2" seed="4"/>
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" result="fleck"/>
+      <feComposite in="warped" in2="fleck" operator="arithmetic" k2="1" k3="0.5" k4="-0.25"/>
+      <feColorMatrix values="1.0 0 0 0 0.0  1.0 0 0 0 0.0  1.0 0 0 0 0.0  0 0 0 0 1"/>
+      <feComponentTransfer>
+        <feFuncR type="discrete" tableValues="0.11 0.11 0.11 0.11 0.165 0.231 0.231 0.322 0.231 0.945 0.322 0.231"/>
+        <feFuncG type="discrete" tableValues="0.11 0.11 0.11 0.11 0.165 0.231 0.231 0.314 0.231 0.941 0.314 0.231"/>
+        <feFuncB type="discrete" tableValues="0.122 0.122 0.122 0.122 0.2 0.851 0.851 0.89 0.851 0.925 0.89 0.851"/>
+      </feComponentTransfer>
+      <feComponentTransfer result="paint"><feFuncA type="identity"/></feComponentTransfer>
+      <feTurbulence type="fractalNoise" baseFrequency="0.16" numOctaves="1" seed="3"/>
+      <feColorMatrix values="0 0 0 0 0.95  0 0 0 0 0.945  0 0 0 0 0.93  5 0 0 0 -2.55"/>
+      <feComponentTransfer result="dots"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+      <feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="3" seed="10"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  4 0 0 0 -2.0"/>
+      <feComponentTransfer result="where"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+      <feComposite in="dots" in2="where" operator="in" result="splat"/>
+      <feMerge><feMergeNode in="paint"/><feMergeNode in="splat"/></feMerge>
     </filter>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
-    <filter id="lift" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="30" stdDeviation="30" flood-color="#000" flood-opacity="0.6"/></filter>
-    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1.1" fill="#fff" fill-opacity="0.07"/></pattern>
-    <radialGradient id="dotfade" cx="0.3" cy="0.4" r="0.8"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
-    <mask id="dotmask"><rect width="1280" height="640" fill="url(#dotfade)"/></mask>
-    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0.3">
-      <stop offset="0" stop-color="#ffb35c"/>
-      <stop offset="0.5" stop-color="#ff5f8f"/>
-      <stop offset="1" stop-color="#a78bfa"/>
-    </linearGradient>
-    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#171a24" stop-opacity="0.92"/>
-      <stop offset="1" stop-color="#0d0f16" stop-opacity="0.92"/>
-    </linearGradient>
-    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
-      <stop offset="0.5" stop-color="#fff" stop-opacity="0.05"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0.12"/>
-    </linearGradient>
-    <linearGradient id="spark" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff7a45"/><stop offset="1" stop-color="#ffc46b"/></linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe29a"/><stop offset="1" stop-color="#f5a524"/></linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <linearGradient id="g-code" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffa057"/><stop offset="1" stop-color="#f0533a"/></linearGradient>
-    <linearGradient id="g-codex" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
-    <linearGradient id="g-chat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6ee7b7"/><stop offset="1" stop-color="#059669"/></linearGradient>
-    <linearGradient id="g-claude" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#ec4899"/></linearGradient>
-    <clipPath id="toastclip"><rect x="836" y="532" width="344" height="72" rx="18"/></clipPath>
+    <filter id="clay" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.0045 0.014" numOctaves="5" seed="23"/>
+      <feColorMatrix values="1.9 0 0 0 -0.45  1.9 0 0 0 -0.45  1.9 0 0 0 -0.45  0 0 0 0 1" result="shape"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="10"/>
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" result="flow"/>
+      <feDisplacementMap in="shape" in2="flow" scale="70" xChannelSelector="R" yChannelSelector="G" result="warped"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.05 0.32" numOctaves="2" seed="9"/>
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" result="fleck"/>
+      <feComposite in="warped" in2="fleck" operator="arithmetic" k2="1" k3="0.5" k4="-0.25"/>
+      <feColorMatrix values="1.0 0 0 0 0.0  1.0 0 0 0 0.0  1.0 0 0 0 0.0  0 0 0 0 1"/>
+      <feComponentTransfer>
+        <feFuncR type="discrete" tableValues="0.89 0.918 0.918 0.933 0.918 0.945 0.714 0.918 0.918 0.918 0.89 0.918"/>
+        <feFuncG type="discrete" tableValues="0.333 0.541 0.541 0.667 0.541 0.941 0.549 0.541 0.541 0.541 0.333 0.541"/>
+        <feFuncB type="discrete" tableValues="0.176 0.18 0.18 0.243 0.18 0.925 0.941 0.18 0.18 0.18 0.176 0.18"/>
+      </feComponentTransfer>
+      <feComponentTransfer result="paint"><feFuncA type="identity"/></feComponentTransfer>
+      <feTurbulence type="fractalNoise" baseFrequency="0.16" numOctaves="1" seed="8"/>
+      <feColorMatrix values="0 0 0 0 0.95  0 0 0 0 0.945  0 0 0 0 0.93  5 0 0 0 -2.55"/>
+      <feComponentTransfer result="dots"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="3" seed="15"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  4 0 0 0 -2.08"/>
+      <feComponentTransfer result="where"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+      <feComposite in="dots" in2="where" operator="in" result="splat"/>
+      <feMerge><feMergeNode in="paint"/><feMergeNode in="splat"/></feMerge>
+    </filter>
+    <filter id="paper" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="2"/>
+      <feColorMatrix values="0 0 0 0 0.2  0 0 0 0 0.19  0 0 0 0 0.18  0.42 0 0 0 -0.165"/>
+    </filter>
+    <pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 .5H4M.5 0V4" stroke="#000" stroke-opacity="0.02"/></pattern>
+    <linearGradient id="light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="1" stop-color="#000" stop-opacity="0.06"/></linearGradient>
   </defs>
-
-  <g clip-path="url(#frame)">
-    <rect width="1280" height="640" fill="#07080d"/>
-    <g filter="url(#aurora)" opacity="0.9">
-      <circle class="drift-a" cx="230" cy="120" r="210" fill="#ff7a3d" fill-opacity="0.38"/>
-      <circle class="drift-b" cx="760" cy="80" r="230" fill="#ff3d81" fill-opacity="0.26"/>
-      <circle class="drift-c" cx="1120" cy="560" r="260" fill="#7c5cff" fill-opacity="0.34"/>
-      <circle class="drift-a" cx="420" cy="620" r="200" fill="#22d3ee" fill-opacity="0.16"/>
+  <rect width="1280" height="640" fill="#e7e6e2"/>
+  <svg x="40" y="64" width="620" height="340"><g transform="rotate(-20 310 170)"><rect x="-300" y="-300" width="1220" height="940" filter="url(#water)"/></g></svg>
+  <svg x="676" y="64" width="230" height="340"><rect x="-80" y="-80" width="390" height="500" filter="url(#clay)"/></svg>
+  <g font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" fill="#1d1d1f">
+    <g font-size="12" letter-spacing="0.4">
+      <text x="40" y="40">HOURS</text><text x="352" y="40">/</text><text x="520" y="40">01</text><text x="676" y="40">TOKENS</text><text x="1240" y="40" text-anchor="end">AI PLAYTIME</text>
     </g>
-    <rect width="1280" height="640" fill="url(#dots)" mask="url(#dotmask)"/>
-    <rect width="1280" height="640" filter="url(#grain)"/>
+    <g font-size="9.5" letter-spacing="0.3" fill="#f1f0ec">
+      <text x="50" y="396">HRS</text><text x="232" y="396">/</text><text x="352" y="396">01</text><text x="650" y="396" text-anchor="end">~1,024</text>
+      <text x="686" y="396" fill="#1d1d1f">TOK</text><text x="896" y="396" text-anchor="end" fill="#1d1d1f">4.1B</text>
+    </g>
+    <rect x="40" y="418" width="30" height="4" fill="#8f8cf0"/><rect x="70" y="418" width="30" height="4" fill="#3b3bd9"/><rect x="100" y="418" width="30" height="4" fill="#1c1c1f"/><rect x="130" y="418" width="30" height="4" fill="#f1f0ec"/><rect x="160" y="418" width="30" height="4" fill="#55555c"/><rect x="190" y="418" width="30" height="4" fill="#5250e3"/><rect x="220" y="418" width="30" height="4" fill="#5a5a63"/><rect x="250" y="418" width="30" height="4" fill="#3b3bd9"/>
+    <rect x="786" y="418" width="20" height="4" fill="#b68cf0"/><rect x="806" y="418" width="20" height="4" fill="#ea8a2e"/><rect x="826" y="418" width="20" height="4" fill="#f1f0ec"/><rect x="846" y="418" width="20" height="4" fill="#eeaa3e"/><rect x="866" y="418" width="20" height="4" fill="#e3552d"/><rect x="886" y="418" width="20" height="4" fill="#b68cf0"/>
+    <text x="660" y="424" font-size="10.5" text-anchor="end">Hours played, across your AI apps.</text>
+    <text x="40" y="472" font-family="Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', Georgia, serif" font-size="30" letter-spacing="18">PLAY</text>
+    <g font-size="10.5" letter-spacing="0.3"><text x="250" y="468">~1,024 HRS</text><text x="350" y="468">-/-</text><text x="420" y="468">4.1B TOK</text></g>
+    <text x="678" y="472" font-family="Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', Georgia, serif" font-size="30" letter-spacing="18" text-anchor="end">TIME</text>
+    <g font-size="10.5" text-anchor="end">
+      <text x="1240" y="84">Steam-style hours played across</text>
+      <text x="1240" y="98">Claude Code, Codex, the ChatGPT app</text>
+      <text x="1240" y="112">and the Claude app.</text>
+    </g>
+    <g font-size="10" letter-spacing="0.5"><rect x="930" y="164" width="8" height="8" fill="#e3552d"/><text x="946" y="172">CLAUDE CODE</text><text x="1240" y="172" text-anchor="end">~812</text><path d="M930 181.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/><rect x="930" y="190" width="8" height="8" fill="#3b3bd9"/><text x="946" y="198">CODEX</text><text x="1240" y="198" text-anchor="end">104.5</text><path d="M930 207.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/><rect x="930" y="216" width="8" height="8" fill="#1c1c1f"/><text x="946" y="224">CHATGPT APP</text><text x="1240" y="224" text-anchor="end">88.2</text><path d="M930 233.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/><rect x="930" y="242" width="8" height="8" fill="#b68cf0"/><text x="946" y="250">CLAUDE APP</text><text x="1240" y="250" text-anchor="end">19.1</text><path d="M930 259.5H1240" stroke="#1d1d1f" stroke-opacity="0.18"/></g>
+    <rect x="930" y="300" width="3.2" height="34" fill="#1d1d1f"/><rect x="952" y="300" width="8.0" height="34" fill="#1d1d1f"/><rect x="974" y="300" width="11.2" height="34" fill="#1d1d1f"/><rect x="996" y="300" width="12.8" height="34" fill="#1d1d1f"/><rect x="1018" y="300" width="4.8" height="34" fill="#1d1d1f"/><rect x="1040" y="300" width="0.8" height="34" fill="#1d1d1f"/><rect x="1062" y="300" width="1.6" height="34" fill="#1d1d1f"/><rect x="1084" y="300" width="9.6" height="34" fill="#1d1d1f"/><rect x="1106" y="300" width="12.8" height="34" fill="#1d1d1f"/><rect x="1128" y="300" width="8.0" height="34" fill="#1d1d1f"/><rect x="1150" y="300" width="3.2" height="34" fill="#1d1d1f"/><rect x="1172" y="300" width="1.6" height="34" fill="#1d1d1f"/><rect x="1194" y="300" width="4.8" height="34" fill="#1d1d1f"/><rect x="1216" y="300" width="11.2" height="34" fill="#1d1d1f"/>
+    <g stroke="#1d1d1f"><path d="M930 352.5H1240"/><path d="M930.5 352v6"/><path d="M952.5 352v3.5"/><path d="M974.5 352v3.5"/><path d="M996.5 352v3.5"/><path d="M1018.5 352v3.5"/><path d="M1040.5 352v3.5"/><path d="M1062.5 352v3.5"/><path d="M1084.5 352v6"/><path d="M1106.5 352v3.5"/><path d="M1128.5 352v3.5"/><path d="M1150.5 352v3.5"/><path d="M1172.5 352v3.5"/><path d="M1194.5 352v3.5"/><path d="M1216.5 352v3.5"/><path d="M1238.5 352v6"/></g>
+    <g font-size="9.5" letter-spacing="0.4"><text x="930" y="374">14 DAYS</text><text x="1240" y="374" text-anchor="end">96.3 HRS</text></g>
+    <g font-size="12" letter-spacing="0.4"><text x="930" y="438">/</text><text x="930" y="506">01</text></g>
+    <g font-size="10.5" text-anchor="end">
+      <text x="1240" y="540">Tokens priced at API list prices.</text>
+      <text x="1240" y="554">Local only. Nothing leaves your machine.</text>
+      <text x="1240" y="600" fill="#3730a3">npx ai-playtime</text>
+    </g>
+    <text x="664" y="600" font-size="76" letter-spacing="-2.5" fill="#3a3938" text-anchor="end">AI Playtime</text>
   </g>
-  <rect x="0.5" y="0.5" width="1279" height="639" rx="27.5" fill="none" stroke="#fff" stroke-opacity="0.1"/>
-
-  <g transform="translate(80 104)">
-    <rect class="pulse" width="64" height="64" rx="18" fill="url(#title)" filter="url(#glow)" opacity="0.8"/>
-    <rect width="64" height="64" rx="18" fill="url(#title)"/>
-    <rect x="1" y="1" width="62" height="62" rx="17" fill="none" stroke="#fff" stroke-opacity="0.35"/>
-    <path d="M25 19.5L45 32L25 44.5Z" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
-    <g class="mono" font-size="16">
-      <rect x="84" y="13" width="214" height="38" rx="19" fill="#fff" fill-opacity="0.06" stroke="#fff" stroke-opacity="0.12"/>
-      <text x="104" y="37" fill="#8a91a0">$</text>
-      <text x="120" y="37" fill="#e9ecf2">npx ai-playtime</text>
-      <rect class="blink" x="272" y="24" width="9" height="17" rx="1.5" fill="#ffb35c"/>
-    </g>
-  </g>
-
-  <g class="sans">
-    <text x="76" y="262" font-size="80" font-weight="800" letter-spacing="-3" fill="#f5f6fa">AI <tspan fill="url(#title)">Playtime</tspan></text>
-    <text x="80" y="314" font-size="26" fill="#a3a9b7">Hours played and tokens burned,<tspan x="80" dy="36">across every AI app you use.</tspan></text>
-
-    <g transform="translate(80 410)">
-      <text font-size="38" font-weight="750" letter-spacing="-1" fill="#f5f6fa">~1,024</text>
-      <text y="28" font-size="15" fill="#8a91a0">hrs on record</text>
-      <text x="150" font-size="38" font-weight="750" letter-spacing="-1" fill="#f5f6fa">4.1B</text>
-      <text x="150" y="28" font-size="15" fill="#8a91a0">tokens burned</text>
-      <text x="272" font-size="38" font-weight="750" letter-spacing="-1" fill="url(#title)">$9,877</text>
-      <text x="272" y="28" font-size="15" fill="#8a91a0">at API prices</text>
-    </g>
-
-    <g transform="translate(80 548)" fill="#8a91a0" font-size="15">
-      <path d="M3 8V5.5a5 5 0 0 1 10 0V8" fill="none" stroke="#8a91a0" stroke-width="1.6"/>
-      <rect x="0.5" y="8" width="15" height="11" rx="2.5"/>
-      <text x="26" y="18">Local only. Reads your logs, nothing leaves your machine.</text>
-    </g>
-  </g>
-
-  <g filter="url(#lift)">
-    <rect x="590" y="88" width="610" height="452" rx="26" fill="url(#panel)"/>
-  </g>
-  <rect x="590.5" y="88.5" width="609" height="451" rx="25.5" fill="none" stroke="url(#edge)"/>
-
-  <g class="sans">
-    <text x="626" y="134" font-size="13" font-weight="700" letter-spacing="2.6" fill="#8a91a0">LIBRARY</text>
-    <text x="1164" y="134" font-size="14" fill="#a3a9b7" text-anchor="end"><tspan font-weight="700" fill="#ffc46b">96.3</tspan> hrs last two weeks</text>
-  </g>
-  <g transform="translate(806 138)" fill="url(#spark)">
-    <rect class="rise" style="animation-delay:0.30s" x="0" y="-7" width="7" height="7" rx="2"/>
-    <rect class="rise" style="animation-delay:0.36s" x="12" y="-17.5" width="7" height="17.5" rx="2"/>
-    <rect class="rise" style="animation-delay:0.42s" x="24" y="-24.5" width="7" height="24.5" rx="2"/>
-    <rect class="rise" style="animation-delay:0.48s" x="36" y="-28" width="7" height="28" rx="2"/>
-    <rect class="rise" style="animation-delay:0.54s" x="48" y="-10.5" width="7" height="10.5" rx="2"/>
-    <circle cx="63.5" cy="-2" r="2" fill="#5d6473"/>
-    <rect class="rise" style="animation-delay:0.66s" x="72" y="-3.5" width="7" height="3.5" rx="2"/>
-    <rect class="rise" style="animation-delay:0.72s" x="84" y="-21" width="7" height="21" rx="2"/>
-    <rect class="rise" style="animation-delay:0.78s" x="96" y="-28" width="7" height="28" rx="2"/>
-    <rect class="rise" style="animation-delay:0.84s" x="108" y="-17.5" width="7" height="17.5" rx="2"/>
-    <rect class="rise" style="animation-delay:0.90s" x="120" y="-7" width="7" height="7" rx="2"/>
-    <rect class="rise" style="animation-delay:0.96s" x="132" y="-3.5" width="7" height="3.5" rx="2"/>
-    <rect class="rise" style="animation-delay:1.02s" x="144" y="-10.5" width="7" height="10.5" rx="2"/>
-    <rect class="rise" style="animation-delay:1.08s" x="156" y="-24.5" width="7" height="24.5" rx="2"/>
-  </g>
-  <path d="M626 182.5H1164" stroke="#fff" stroke-opacity="0.07"/>
-
-  <g class="sans">
-    <g transform="translate(626 204)">
-      <rect width="56" height="56" rx="16" fill="url(#g-code)"/>
-      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
-      <text x="28" y="35" class="mono" font-size="19" font-weight="800" fill="#fff" text-anchor="middle">&gt;_</text>
-      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">Claude Code</text>
-      <text x="76" y="46" font-size="14" fill="#8a91a0">2.95B tokens · $7,012</text>
-      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">~812</text>
-      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
-      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
-      <rect class="fill" style="animation-delay:.4s" x="76" y="62" width="366" height="5" rx="2.5" fill="url(#g-code)"/>
-    </g>
-    <g transform="translate(626 290)">
-      <rect width="56" height="56" rx="16" fill="url(#g-codex)"/>
-      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
-      <text x="28" y="35" class="mono" font-size="18" font-weight="800" fill="#fff" text-anchor="middle">{ }</text>
-      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">Codex</text>
-      <text x="76" y="46" font-size="14" fill="#8a91a0">905M tokens · $2,120</text>
-      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">104.5</text>
-      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
-      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
-      <rect class="fill" style="animation-delay:.55s" x="76" y="62" width="47" height="5" rx="2.5" fill="url(#g-codex)"/>
-    </g>
-    <g transform="translate(626 376)">
-      <rect width="56" height="56" rx="16" fill="url(#g-chat)"/>
-      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
-      <path d="M17 16h22a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6H27l-7 6v-6h-3a6 6 0 0 1-6-6v-9a6 6 0 0 1 6-6Z" fill="#fff"/>
-      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">ChatGPT app</text>
-      <text x="76" y="46" font-size="14" fill="#8a91a0">204M tokens · $661</text>
-      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">88.2</text>
-      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
-      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
-      <rect class="fill" style="animation-delay:.7s" x="76" y="62" width="40" height="5" rx="2.5" fill="url(#g-chat)"/>
-    </g>
-    <g transform="translate(626 462)">
-      <rect width="56" height="56" rx="16" fill="url(#g-claude)"/>
-      <rect x="0.5" y="0.5" width="55" height="55" rx="15.5" fill="none" stroke="#fff" stroke-opacity="0.3"/>
-      <path d="M28 12C29.6 22 33.6 26 44 28C33.6 30 29.6 34 28 44C26.4 34 22.4 30 12 28C22.4 26 26.4 22 28 12Z" fill="#fff"/>
-      <text x="76" y="23" font-size="20" font-weight="650" fill="#f5f6fa">Claude app</text>
-      <text x="76" y="46" font-size="14" fill="#8a91a0">44M tokens · $83</text>
-      <text x="538" y="25" font-size="22" font-weight="750" fill="#f5f6fa" text-anchor="end">19.1</text>
-      <text x="538" y="46" font-size="13" fill="#8a91a0" text-anchor="end">hrs on record</text>
-      <rect x="76" y="62" width="462" height="5" rx="2.5" fill="#fff" fill-opacity="0.07"/>
-      <rect class="fill" style="animation-delay:.85s" x="76" y="62" width="9" height="5" rx="2.5" fill="url(#g-claude)"/>
-    </g>
-  </g>
-
-  <g class="toast">
-    <g filter="url(#lift)">
-      <rect x="836" y="532" width="344" height="72" rx="18" fill="#141722"/>
-    </g>
-    <rect x="836.5" y="532.5" width="343" height="71" rx="17.5" fill="none" stroke="url(#gold)" stroke-opacity="0.7"/>
-    <g clip-path="url(#toastclip)">
-      <g transform="skewX(-20)"><rect class="shine" x="1020" y="532" width="90" height="72" fill="url(#sheen)"/></g>
-    </g>
-    <circle cx="874" cy="568" r="20" fill="url(#gold)"/>
-    <g fill="none" stroke="#3b2a05" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M866 559h16v5a8 8 0 0 1-16 0Z" fill="#3b2a05"/>
-      <path d="M866 561h-3a3.5 3.5 0 0 0 4 5.5M882 561h3a3.5 3.5 0 0 1-4 5.5M874 572v4M869 578h10"/>
-    </g>
-    <g class="sans">
-      <text x="908" y="561" font-size="12" font-weight="700" letter-spacing="1.8" fill="#ffd27a">ACHIEVEMENT UNLOCKED</text>
-      <text x="908" y="584" font-size="17" font-weight="650" fill="#f5f6fa">1,000 hours on record</text>
-    </g>
-  </g>
+  <g transform="translate(100 546) scale(0.92)" fill="#4f4945"><path d="M-44.4 -28.7Q-44.4 -29.4 -43.9 -32.8Q-43.5 -36.1 -42.4 -39.5Q-41.3 -42.9 -39.4 -45.9Q-37.5 -48.9 -34.8 -51.2Q-32.1 -53.5 -28.8 -54.7Q-25.5 -55.9 -22.0 -56.0Q-18.4 -56.1 -16.8 -55.7Q-15.2 -55.4 -21.0 -39.3Q-26.9 -23.3 -35.7 -25.7Q-44.4 -28.1 -44.4 -28.7Z"/>
+<path d="M-16.7 -13.1Q-16.8 -13.6 -4.8 -19.0Q7.2 -24.5 9.0 -23.1Q10.8 -21.7 11.9 -12.4Q12.9 -3.1 9.0 0.3Q5.2 3.7 -5.7 -4.4Q-16.6 -12.6 -16.7 -13.1Z"/>
+<path d="M-0.6 52.3Q-1.9 53.0 -5.0 54.3Q-8.2 55.5 -11.6 56.3Q-15.0 57.0 -18.6 56.9Q-22.1 56.8 -23.0 56.5Q-23.9 56.1 -20.7 43.9Q-17.6 31.8 -11.5 31.7Q-5.4 31.7 -2.3 41.6Q0.8 51.5 -0.6 52.3Z"/>
+<path d="M-30.4 53.1Q-32.8 52.3 -35.4 50.1Q-38.1 47.8 -39.9 44.9Q-41.8 41.9 -42.8 38.6Q-43.9 35.3 -44.3 32.0Q-44.8 28.7 -44.9 26.2Q-45.0 23.8 -38.5 22.6Q-32.0 21.5 -26.9 25.7Q-21.8 29.9 -24.9 41.9Q-28.0 54.0 -30.4 53.1Z"/>
+<path d="M-45.7 16.8Q-45.7 16.1 -45.7 13.2Q-45.6 10.3 -45.5 7.5Q-45.4 4.8 -45.4 2.2Q-45.4 -0.4 -45.4 -3.0Q-45.4 -5.6 -45.5 -8.3Q-45.6 -11.0 -45.7 -13.9Q-45.7 -16.9 -45.7 -19.4Q-45.6 -21.8 -36.7 -19.5Q-27.8 -17.1 -25.5 -14.6Q-23.2 -12.2 -23.1 -11.7Q-23.0 -11.2 -27.7 2.0Q-32.4 15.1 -39.0 16.3Q-45.7 17.4 -45.7 16.8Z"/>
+<path d="M15.8 -12.5Q14.8 -21.9 26.1 -22.0Q37.4 -22.0 36.4 -12.1Q35.4 -2.3 26.1 -2.6Q16.9 -3.0 15.8 -12.5Z"/>
+<path d="M-7.5 0.1Q3.3 8.2 3.4 13.9Q3.5 19.5 -0.9 22.7Q-5.3 26.0 -11.3 26.0Q-17.3 26.0 -22.4 21.8Q-27.5 17.7 -22.9 4.8Q-18.3 -8.0 -7.5 0.1Z"/>
+<path d="M-16.6 -39.0Q-10.7 -55.0 -8.9 -54.6Q-7.1 -54.2 -4.0 -53.0Q-0.8 -51.7 1.9 -50.2Q4.7 -48.7 5.6 -48.2Q6.5 -47.7 6.4 -38.4Q6.3 -29.2 -5.8 -23.7Q-17.8 -18.3 -20.1 -20.7Q-22.5 -23.0 -16.6 -39.0Z"/>
+<path d="M56.3 15.8Q55.5 17.2 53.2 19.7Q51.0 22.2 48.4 24.2Q45.9 26.2 43.3 27.8Q40.7 29.4 38.3 30.7Q35.9 32.1 33.7 33.3Q31.5 34.4 29.7 30.6Q28.0 26.9 34.9 18.3Q41.8 9.7 49.4 12.0Q57.1 14.3 56.3 15.8Z"/>
+<path d="M26.4 37.3Q26.3 37.3 24.1 38.6Q21.8 39.8 19.6 41.2Q17.4 42.5 15.1 43.9Q12.8 45.3 10.4 46.8Q7.9 48.3 6.5 49.1Q5.1 49.8 1.9 39.8Q-1.2 29.8 3.2 26.6Q7.6 23.3 15.2 26.3Q22.8 29.3 24.6 33.3Q26.5 37.3 26.4 37.3Z"/>
+<path d="M12.9 -26.8Q11.1 -28.2 11.2 -37.4Q11.3 -46.7 12.8 -45.7Q14.4 -44.8 16.7 -43.3Q19.0 -41.9 21.2 -40.6Q23.4 -39.3 25.6 -38.0Q27.9 -36.8 30.2 -35.5Q32.6 -34.3 35.1 -32.9Q37.7 -31.5 39.2 -30.5Q40.7 -29.6 38.8 -27.5Q36.9 -25.4 25.8 -25.4Q14.8 -25.4 12.9 -26.8Z"/>
+<path d="M8.4 13.1Q8.4 7.2 12.3 3.7Q16.2 0.2 25.5 0.5Q34.8 0.9 36.8 3.8Q38.7 6.8 31.3 16.0Q23.9 25.1 16.2 22.1Q8.5 19.0 8.4 13.1Z"/>
+<path d="M61.5 2.1Q60.9 5.6 60.1 7.3Q59.2 8.9 51.1 6.4Q43.0 4.0 41.1 1.0Q39.2 -1.9 40.2 -11.6Q41.2 -21.4 43.1 -23.5Q45.0 -25.6 46.2 -24.9Q47.3 -24.2 50.0 -22.1Q52.7 -20.0 55.1 -17.3Q57.5 -14.7 59.2 -11.5Q60.9 -8.3 61.5 -4.9Q62.2 -1.4 61.5 2.1Z"/>
+</g>
+  <rect width="1280" height="640" fill="url(#weave)"/>
+  <rect width="1280" height="640" filter="url(#paper)" style="mix-blend-mode:multiply"/>
+  <rect width="1280" height="640" fill="url(#light)" style="mix-blend-mode:soft-light"/>
 </svg>
