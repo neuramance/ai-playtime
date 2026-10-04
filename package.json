@@ -42,5 +42,6 @@
     "typescript-eslint": "8.71.0",
     "vitest": "5.0.2",
     "zod": "4.6.5"
-  }
+  },
+  "packageManager": "bun@1.4.2"
 }
